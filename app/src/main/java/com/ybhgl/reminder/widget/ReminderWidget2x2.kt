@@ -63,6 +63,13 @@ class ReminderWidget2x2 : AppWidgetProvider() {
                         views.setTextViewText(R.id.widget_2x2_unit, displayInfo.unit)
                         views.setTextViewText(R.id.widget_2x2_date, displayInfo.dateString)
 
+                        // 应用响应式字号（同时考虑数字和单位）
+                        val (cellWidth, cellHeight) = WidgetUpdateHelper.getWidgetCellSize(appWidgetManager, appWidgetId)
+                        val responsiveTextSize = WidgetUpdateHelper.getResponsiveDaysTextSize(context, displayInfo.days, displayInfo.unit, cellWidth, cellHeight)
+                        views.setFloat(R.id.widget_2x2_days, "setTextSize", responsiveTextSize)
+                        val unitTextSize = responsiveTextSize * 0.32f
+                        views.setFloat(R.id.widget_2x2_unit, "setTextSize", unitTextSize)
+
                         views.setInt(R.id.widget_2x2_header_bg, "setColorFilter", context.getColor(displayInfo.accentColorResId))
                         views.setTextColor(R.id.widget_2x2_days, context.getColor(displayInfo.accentColorResId))
 
