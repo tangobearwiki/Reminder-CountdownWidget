@@ -44,7 +44,6 @@ class ReminderWidget1x2 : AppWidgetProvider() {
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_layout_1x2)
 
-                    // Apply transparency
                     WidgetUpdateHelper.applyWidgetOpacity(context, views, R.id.widget_1x2_bg, appWidgetId)
 
                     val configuredId = WidgetConfigStore.get1x2Or2x2Config(context, appWidgetId)
@@ -60,6 +59,12 @@ class ReminderWidget1x2 : AppWidgetProvider() {
                         views.setTextViewText(R.id.widget_1x2_label, displayInfo.label)
                         views.setTextViewText(R.id.widget_1x2_days, displayInfo.days)
                         views.setTextViewText(R.id.widget_1x2_unit, displayInfo.unit)
+
+                        val (cellWidth, cellHeight) = WidgetUpdateHelper.getWidgetCellSize(appWidgetManager, appWidgetId)
+                        val responsiveTextSize = WidgetUpdateHelper.getResponsiveDaysTextSize1x2(context, displayInfo.days, displayInfo.unit, cellWidth, cellHeight)
+                        views.setFloat(R.id.widget_1x2_days, "setTextSize", responsiveTextSize)
+                        val unitTextSize = responsiveTextSize * 0.32f
+                        views.setFloat(R.id.widget_1x2_unit, "setTextSize", unitTextSize)
 
                         views.setTextColor(R.id.widget_1x2_days, context.getColor(displayInfo.accentColorResId))
 

@@ -143,14 +143,7 @@ object WidgetUpdateHelper {
     }
 
     /**
-     * 根据小组件可用空间和内容长度计算响应式字号
-     *
-     * @param context 上下文
-     * @param days 显示的天数字符串
-     * @param unit 单位字符串（如"天"）
-     * @param widgetWidthDp 小组件宽度（dp）
-     * @param widgetHeightDp 小组件高度（dp）
-     * @return 最佳字号（sp）
+     * 根据小组件可用空间和内容长度计算响应式字号（2x2 专用）
      */
     fun getResponsiveDaysTextSize(
         context: Context,
@@ -162,47 +155,73 @@ object WidgetUpdateHelper {
         val density = context.resources.displayMetrics.density
         val scaledDensity = context.resources.displayMetrics.scaledDensity
         
-        // 小组件实际像素尺寸
         val widgetWidthPx = widgetWidthDp * density
         val widgetHeightPx = widgetHeightDp * density
         
-        // 计算固定区域高度 (px)
-        // Header: textSize 15sp (转为px) + padding 8dp*2 (转为px)
         val headerHeightPx = 15f * scaledDensity + 8f * density * 2
-        // Footer: textSize 13sp (转为px) + padding 8dp*2 (转为px)
         val footerHeightPx = 13f * scaledDensity + 8f * density * 2
         val dividerHeightPx = 0.6f * density
         val bodyPaddingVerticalPx = 4f * density * 2
         val bodyPaddingHorizontalPx = 8f * density * 2
         
-        // 可用空间
         val availableHeightPx = widgetHeightPx - headerHeightPx - footerHeightPx - dividerHeightPx - bodyPaddingVerticalPx
         val availableWidthPx = widgetWidthPx - bodyPaddingHorizontalPx
         
-        // 防止负值
         if (availableHeightPx <= 0 || availableWidthPx <= 0) {
             return 24f
         }
         
-        // 数字和单位的字符宽度系数
-        // 数字字符宽度 ≈ fontSizePx * 0.6
-        // 中文字符宽度 ≈ fontSizePx * 1.0 (全宽字符)
         val daysLen = days.length.coerceAtLeast(1)
         val unitLen = unit.length.coerceAtLeast(0)
         val charWidthFactor = daysLen * 0.6f + unitLen * 1.0f
-        val spacingPx = 4f * density  // 数字和单位之间的间距
+        val spacingPx = 4f * density
         
-        // 基于高度的最大字号 (行高 ≈ 字号(px) * 1.2)
         val maxByHeightPx = availableHeightPx / 1.2f
         val maxByHeightSp = maxByHeightPx / scaledDensity
         
-        // 基于宽度的最大字号
-        // 总宽度 = charWidthFactor * fontSizePx + spacing
         val maxByWidthPx = (availableWidthPx - spacingPx) / charWidthFactor
         val maxByWidthSp = maxByWidthPx / scaledDensity
         
-        // 取较小值确保完整显示，添加安全边距，设置上限
         return (min(maxByHeightSp, maxByWidthSp) * 0.9f).coerceAtMost(80f)
+    }
+
+    /**
+     * 根据小组件可用空间和内容长度计算响应式字号（1x2 专用）
+     */
+    fun getResponsiveDaysTextSize1x2(
+        context: Context,
+        days: String,
+        unit: String,
+        widgetWidthDp: Float,
+        widgetHeightDp: Float
+    ): Float {
+        val density = context.resources.displayMetrics.density
+        val scaledDensity = context.resources.displayMetrics.scaledDensity
+        
+        val widgetWidthPx = widgetWidthDp * density
+        val widgetHeightPx = widgetHeightDp * density
+        
+        // 1x2 padding: 6dp*2 垂直, 12dp*2 水平, 右侧 margin 8dp
+        val paddingVerticalPx = 6f * density * 2
+        val paddingHorizontalPx = 12f * density * 2
+        val rightMarginPx = 8f * density
+        
+        val availableHeightPx = widgetHeightPx - paddingVerticalPx
+        val availableWidthPx = (widgetWidthPx - paddingHorizontalPx - rightMarginPx) * 0.5f
+        
+        if (availableHeightPx <= 0 || availableWidthPx <= 0) {
+            return 24f
+        }
+        
+        val daysLen = days.length.coerceAtLeast(1)
+        val unitLen = unit.length.coerceAtLeast(0)
+        val charWidthFactor = daysLen * 0.6f + unitLen * 1.0f
+        val spacingPx = 2f * density
+        
+        val maxByHeightSp = availableHeightPx / (1.2f * scaledDensity)
+        val maxByWidthSp = (availableWidthPx - spacingPx) / (charWidthFactor * scaledDensity)
+        
+        return (min(maxByHeightSp, maxByWidthSp) * 0.85f).coerceAtMost(48f)
     }
 
     /**
@@ -210,7 +229,6 @@ object WidgetUpdateHelper {
      */
     fun getWidgetCellSize(appWidgetManager: AppWidgetManager, appWidgetId: Int): Pair<Float, Float> {
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        // OPTION_APPWIDGET_MIN_WIDTH 返回的是 dp 值，不是单元格数
         val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 220).toFloat()
         val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 220).toFloat()
         return Pair(widthDp, heightDp)
@@ -220,13 +238,10 @@ object WidgetUpdateHelper {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val repository = (context.applicationContext as ReminderApplication).container.reminderRepository
 
-        // 既然 updateAllWidgets 运行在调用者（前台界面）的主生命周期协程作用域下，
-        // 使用 withContext(Dispatchers.IO) 直接、同步地去查询最实时的数据库，防止 Room Flow Invalidation 的异步延迟和竞态条件
         withContext(Dispatchers.IO) {
             try {
                 val reminders = repository.getAllRemindersList()
 
-                // 直接同步通过 Binder 刷新 1x2 小部件，解决后台广播限频和冻结问题
                 val ids1x2 = appWidgetManager.getAppWidgetIds(ComponentName(context, ReminderWidget1x2::class.java))
                 for (appWidgetId in ids1x2) {
                     val opacity = WidgetConfigStore.getWidgetOpacity(context, appWidgetId)
@@ -234,7 +249,6 @@ object WidgetUpdateHelper {
                     update1x2WidgetWithData(context, appWidgetManager, appWidgetId, opacity, configuredId, reminders)
                 }
 
-                // 直接同步通过 Binder 刷新 2x2 小部件
                 val ids2x2 = appWidgetManager.getAppWidgetIds(ComponentName(context, ReminderWidget2x2::class.java))
                 for (appWidgetId in ids2x2) {
                     val opacity = WidgetConfigStore.getWidgetOpacity(context, appWidgetId)
@@ -246,7 +260,6 @@ object WidgetUpdateHelper {
             }
         }
 
-        // Update 4x2
         val ids4x2 = appWidgetManager.getAppWidgetIds(ComponentName(context, ReminderWidget4x2::class.java))
         if (ids4x2.isNotEmpty()) {
             val intent = Intent(context, ReminderWidget4x2::class.java).apply {
@@ -268,7 +281,6 @@ object WidgetUpdateHelper {
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_layout_1x2)
         
-        // Apply transparency
         val alpha = (opacity * 255) / 100
         views.setInt(R.id.widget_1x2_bg, "setImageAlpha", alpha)
 
@@ -284,6 +296,13 @@ object WidgetUpdateHelper {
             views.setTextViewText(R.id.widget_1x2_label, displayInfo.label)
             views.setTextViewText(R.id.widget_1x2_days, displayInfo.days)
             views.setTextViewText(R.id.widget_1x2_unit, displayInfo.unit)
+
+            // 应用响应式字号（1x2 专用）
+            val (cellWidth, cellHeight) = getWidgetCellSize(appWidgetManager, appWidgetId)
+            val responsiveTextSize = getResponsiveDaysTextSize1x2(context, displayInfo.days, displayInfo.unit, cellWidth, cellHeight)
+            views.setFloat(R.id.widget_1x2_days, "setTextSize", responsiveTextSize)
+            val unitTextSize = responsiveTextSize * 0.32f
+            views.setFloat(R.id.widget_1x2_unit, "setTextSize", unitTextSize)
 
             views.setTextColor(R.id.widget_1x2_days, context.getColor(displayInfo.accentColorResId))
 
@@ -331,7 +350,6 @@ object WidgetUpdateHelper {
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_layout_2x2)
         
-        // Apply transparency
         val alpha = (opacity * 255) / 100
         views.setInt(R.id.widget_2x2_bg, "setImageAlpha", alpha)
 
