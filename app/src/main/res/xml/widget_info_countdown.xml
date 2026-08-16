@@ -9,5 +9,5 @@
     android:previewLayout="@layout/widget_countdown_compact"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="\u663e\u793a\u5012\u6570\u5929\u6570\uff0c\u652f\u6301\u81ea\u5b9a\u4e49\u80cc\u666f\u7167\u7247\u548c\u4e3b\u9898\u8272"
+    android:description="@string/widget_countdown_desc"
     android:configure="com.ybhgl.reminder.widget.WidgetConfigureActivity" />

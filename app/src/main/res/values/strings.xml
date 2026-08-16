@@ -4,4 +4,5 @@
     <string name="widget_name_2x2">提醒卡片</string>
     <string name="widget_name_4x2">提醒列表</string>
     <string name="widget_name_countdown">倒数倒计时</string>
+    <string name="widget_countdown_desc">显示倒数天数，支持自定义背景照片和主题色</string>
 </resources>
