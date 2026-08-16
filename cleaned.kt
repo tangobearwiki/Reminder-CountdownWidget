@@ -9,8 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,10 +21,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.activity.compose.rememberLauncherForActivityResult
 import com.ybhgl.reminder.R
 import com.ybhgl.reminder.ReminderApplication
 import com.ybhgl.reminder.data.ReminderItem
@@ -65,16 +61,13 @@ class WidgetConfigureActivity : ComponentActivity() {
         val providerClassName = info?.provider?.className ?: ""
 
         val isSingleSelection = providerClassName.contains("ReminderWidget1x2") || providerClassName.contains("ReminderWidget2x2")
-        val isCountdownWidget = providerClassName.contains("CountdownWidgetProvider")
+
         val repository = (applicationContext as ReminderApplication).container.reminderRepository
 
         val initialOpacity = WidgetConfigStore.getWidgetOpacity(this, appWidgetId)
         val initialSelectedId = WidgetConfigStore.get1x2Or2x2Config(this, appWidgetId)
         val initialFilterType = if (!isSingleSelection) WidgetConfigStore.get4x2FilterType(this, appWidgetId) else "all"
         val initialCustomIds = if (!isSingleSelection) WidgetConfigStore.get4x2CustomIds(this, appWidgetId) else emptySet()
-        val initialPhotoPaths = if (isCountdownWidget) WidgetConfigStore.getWidgetPhotoPaths(this, appWidgetId) else emptyList()
-        val initialRotationHours = if (isCountdownWidget) WidgetConfigStore.getWidgetRotationHours(this, appWidgetId) else 24
-        val initialAccentColor = if (isCountdownWidget) WidgetConfigStore.getWidgetAccentColor(this, appWidgetId) else 0xFF76E4F7.toInt()
 
         setContent {
             ReminderTheme {
@@ -84,24 +77,16 @@ class WidgetConfigureActivity : ComponentActivity() {
                 ) {
                     WidgetConfigureScreen(
                         isSingleSelection = isSingleSelection,
-                        isCountdownWidget = isCountdownWidget,
                         initialOpacity = initialOpacity,
                         initialSelectedId = initialSelectedId,
                         initialFilterType = initialFilterType,
                         initialCustomIds = initialCustomIds,
-                        initialPhotoPaths = initialPhotoPaths,
-                        initialRotationHours = initialRotationHours,
-                        initialAccentColor = initialAccentColor,
                         onCancel = { finish() },
-                        onSave = { selectedId, filterType, customIds, opacity, items, photoPaths, rotationHours, accentColor ->
+                        onSave = { selectedId, filterType, customIds, opacity, items ->
+                            // Save opacity first for any widget
                             WidgetConfigStore.saveWidgetOpacity(this@WidgetConfigureActivity, appWidgetId, opacity)
-                            if (isCountdownWidget) {
-                                WidgetConfigStore.save1x2Or2x2Config(this@WidgetConfigureActivity, appWidgetId, selectedId)
-                                WidgetConfigStore.saveWidgetPhotoPaths(this@WidgetConfigureActivity, appWidgetId, photoPaths)
-                                WidgetConfigStore.saveWidgetRotationHours(this@WidgetConfigureActivity, appWidgetId, rotationHours)
-                                WidgetConfigStore.saveWidgetAccentColor(this@WidgetConfigureActivity, appWidgetId, accentColor)
-                                CountdownWidgetProvider.updateAllWidgets(this@WidgetConfigureActivity)
-                            } else if (isSingleSelection) {
+
+                            if (isSingleSelection) {
                                 WidgetConfigStore.save1x2Or2x2Config(this@WidgetConfigureActivity, appWidgetId, selectedId)
                                 
                                 val is1x2 = providerClassName.contains("ReminderWidget1x2")
@@ -144,47 +129,27 @@ class WidgetConfigureActivity : ComponentActivity() {
 @Composable
 fun WidgetConfigureScreen(
     isSingleSelection: Boolean,
-    isCountdownWidget: Boolean = false,
     initialOpacity: Int = 100,
     initialSelectedId: Int = -1,
     initialFilterType: String = "all",
     initialCustomIds: Set<Int> = emptySet(),
-    initialPhotoPaths: List<String> = emptyList(),
-    initialRotationHours: Int = 24,
-    initialAccentColor: Int = 0xFF76E4F7.toInt(),
     onCancel: () -> Unit,
-    onSave: (selectedId: Int, filterType: String, customIds: Set<Int>, opacity: Int, reminders: List<ReminderItem>, photoPaths: List<String>, rotationHours: Int, accentColor: Int) -> Unit,
+    onSave: (selectedId: Int, filterType: String, customIds: Set<Int>, opacity: Int, reminders: List<ReminderItem>) -> Unit,
     loadReminders: suspend () -> List<ReminderItem>
 ) {
     var reminders by remember { mutableStateOf<List<ReminderItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val widgetCardShape = RoundedCornerShape(16.dp)
+
     // Transparency State (0-100)
     var opacity by remember { mutableStateOf(initialOpacity.toFloat()) }
 
-    // Selection States for 1x2 / 2x2 / Countdown
+    // Selection States for 1x2 / 2x2
     var selectedReminderId by remember { mutableIntStateOf(initialSelectedId) }
+
     // Selection States for 4x2
     var filterType by remember { mutableStateOf(initialFilterType) }
     var customSelectedIds by remember { mutableStateOf(initialCustomIds) }
-    // Countdown Widget States
-    var photoPaths by remember { mutableStateOf(initialPhotoPaths) }
-    var rotationHours by remember { mutableStateOf(initialRotationHours.toFloat()) }
-    var accentColor by remember { mutableIntStateOf(initialAccentColor) }
-    val context = LocalContext.current
-    val photoStorage = remember { WidgetPhotoStorage(context) }
-    val pickMediaLauncher = rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
-                val newPaths = photoStorage.replacePhotos(uris.toList(), photoPaths)
-                kotlinx.coroutines.withContext(Dispatchers.Main) {
-                    photoPaths = newPaths
-                }
-            }
-        }
-    }
 
     LaunchedEffect(Unit) {
         reminders = loadReminders()
@@ -281,159 +246,9 @@ fun WidgetConfigureScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                // Countdown Widget 专属配置
-                if (isCountdownWidget) {
-                    // 背景照片卡片
-                    Card(
-                        shape = widgetCardShape,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "背景照片",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = if (photoPaths.isEmpty()) "未选择" else "已选 ${photoPaths.size} 张",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = { pickMediaLauncher.launch("image/*") },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text("选择照片")
-                                }
-                                if (photoPaths.isNotEmpty()) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
-                                                photoStorage.clearPhotos(photoPaths)
-                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                                    photoPaths = emptyList()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("清除照片")
-                                    }
-                                }
-                            }
-                            if (photoPaths.size > 1) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "轮换间隔",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "${rotationHours.toInt()} 小时",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Slider(
-                                    value = rotationHours,
-                                    onValueChange = { rotationHours = it },
-                                    valueRange = 1f..168f,
-                                    steps = 166
-                                )
-                                Text(
-                                    text = "多张照片时按此间隔自动轮换",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                    // 主题色条选择卡片
-                    Card(
-                        shape = widgetCardShape,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "主题色条",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                val accentColors = listOf(
-                                    0xFF76E4F7.toInt() to "极光",
-                                    0xFFFF8A5B.toInt() to "余烬",
-                                    0xFFC5A3FF.toInt() to "兰花",
-                                    0xFF4ADE80.toInt() to "翠绿",
-                                    0xFFFBBF24.toInt() to "琥珀",
-                                    0xFF60A5FA.toInt() to "天蓝"
-                                )
-                                accentColors.forEach { (color, label) ->
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.clickable { accentColor = color }
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .background(
-                                                    color = androidx.compose.ui.graphics.Color(color),
-                                                    shape = androidx.compose.foundation.shape.CircleShape
-                                                )
-                                                .border(
-                                                    width = if (accentColor == color) 3.dp else 0.dp,
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    shape = androidx.compose.foundation.shape.CircleShape
-                                                )
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (accentColor == color) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
                 }
 
-                if (isCountdownWidget || isSingleSelection) {
+                if (isSingleSelection) {
                     Text(
                         text = "选择要显示的提醒：",
                         style = MaterialTheme.typography.titleMedium,
@@ -636,16 +451,14 @@ fun WidgetConfigureScreen(
                     }
                     Button(
                         onClick = {
-                            if (isCountdownWidget) {
-                                onSave(selectedReminderId, "", emptySet(), opacity.toInt(), reminders, photoPaths, rotationHours.toInt(), accentColor)
-                            } else if (isSingleSelection) {
-                                onSave(selectedReminderId, "", emptySet(), opacity.toInt(), reminders, emptyList(), 24, 0)
+                            if (isSingleSelection) {
+                                onSave(selectedReminderId, "", emptySet(), opacity.toInt(), reminders)
                             } else {
-                                onSave(-1, filterType, customSelectedIds, opacity.toInt(), reminders, emptyList(), 24, 0)
+                                onSave(-1, filterType, customSelectedIds, opacity.toInt(), reminders)
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        enabled = if (isSingleSelection || isCountdownWidget) selectedReminderId != -1 else (filterType != "custom" || customSelectedIds.isNotEmpty())
+                        enabled = if (isSingleSelection) selectedReminderId != -1 else (filterType != "custom" || customSelectedIds.isNotEmpty())
                     ) {
                         Text("保存")
                     }
