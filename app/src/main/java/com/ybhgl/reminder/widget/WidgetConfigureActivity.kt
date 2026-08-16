@@ -280,7 +280,7 @@ fun WidgetConfigureScreen(
                             valueRange = 0f..100f,
                             steps = 19
                         )
-Text(
+                        Text(
                             text = "调整背景的不透明度，数值越低越透明",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
