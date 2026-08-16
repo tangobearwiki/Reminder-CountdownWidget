@@ -34,6 +34,13 @@ import com.ybhgl.reminder.data.ReminderType
 import com.ybhgl.reminder.ui.theme.ReminderTheme
 import kotlinx.coroutines.flow.first
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+
 class WidgetConfigureActivity : ComponentActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
@@ -177,9 +184,9 @@ fun WidgetConfigureScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            GlobalScope.launch(Dispatchers.IO) {
                 val newPaths = photoStorage.replacePhotos(uris.toList(), photoPaths)
-                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     photoPaths = newPaths
                 }
             }
@@ -325,9 +332,9 @@ fun WidgetConfigureScreen(
                                 if (photoPaths.isNotEmpty()) {
                                     OutlinedButton(
                                         onClick = {
-                                            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+                                            GlobalScope.launch(Dispatchers.IO) {
                                                 photoStorage.clearPhotos(photoPaths)
-                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                                withContext(Dispatchers.Main) {
                                                     photoPaths = emptyList()
                                                 }
                                             }
