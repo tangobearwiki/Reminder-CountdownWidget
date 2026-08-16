@@ -432,7 +432,6 @@ Text(
                         }
                     }
                 }
-                }
 
                 if (isCountdownWidget || isSingleSelection) {
                     Text(
