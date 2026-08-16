@@ -32,6 +32,11 @@ import com.ybhgl.reminder.ReminderApplication
 import com.ybhgl.reminder.data.ReminderItem
 import com.ybhgl.reminder.data.ReminderType
 import com.ybhgl.reminder.ui.theme.ReminderTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 
 class WidgetConfigureActivity : ComponentActivity() {
@@ -177,9 +182,9 @@ fun WidgetConfigureScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            GlobalScope.launch(Dispatchers.IO) {
                 val newPaths = photoStorage.replacePhotos(uris.toList(), photoPaths)
-                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     photoPaths = newPaths
                 }
             }
@@ -326,13 +331,13 @@ Text(
                                 if (photoPaths.isNotEmpty()) {
                                     OutlinedButton(
                                         onClick = {
-                                            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
-                                                photoStorage.clearPhotos(photoPaths)
-                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                                    photoPaths = emptyList()
-                                                }
+                                        GlobalScope.launch(Dispatchers.IO) {
+                                            photoStorage.clearPhotos(photoPaths)
+                                            withContext(Dispatchers.Main) {
+                                                photoPaths = emptyList()
                                             }
-                                        },
+                                        }
+                                    },
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Text("清除照片")
@@ -653,4 +658,5 @@ Text(
             }
         }
     }
+}
 }

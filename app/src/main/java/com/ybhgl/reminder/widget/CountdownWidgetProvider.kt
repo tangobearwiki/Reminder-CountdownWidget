@@ -96,7 +96,6 @@ class CountdownWidgetProvider : AppWidgetProvider() {
             appWidgetIds: IntArray,
             appWidgetManager: AppWidgetManager
         ) {
-            val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val repository = (context.applicationContext as ReminderApplication).container.reminderRepository
@@ -201,8 +200,6 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                } finally {
-                    pendingResult?.finish()
                 }
             }
         }
