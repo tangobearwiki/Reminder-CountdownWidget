@@ -151,7 +151,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                                 if (backgroundBitmap != null) {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.VISIBLE)
                                     setImageViewBitmap(R.id.widget_countdown_bg_image, backgroundBitmap)
-                                    setInt(R.id.widget_countdown_overlay, "setBackgroundColor", 0x88000000)
+                                    setInt(R.id.widget_countdown_overlay, "setBackgroundColor", Color.argb(136, 0, 0, 0))
                                 } else {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.GONE)
                                     setInt(R.id.widget_countdown_root, "setBackgroundResource", R.drawable.widget_background_countdown)
