@@ -288,6 +288,7 @@ fun WidgetConfigureScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
                 // Countdown Widget 专属配置
                 if (isCountdownWidget) {
                     // 背景照片卡片
@@ -436,7 +437,6 @@ fun WidgetConfigureScreen(
                                 }
                             }
                         }
-                    }
                 }
                 }
 
