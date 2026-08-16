@@ -32,11 +32,6 @@ import com.ybhgl.reminder.ReminderApplication
 import com.ybhgl.reminder.data.ReminderItem
 import com.ybhgl.reminder.data.ReminderType
 import com.ybhgl.reminder.ui.theme.ReminderTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 
 class WidgetConfigureActivity : ComponentActivity() {
@@ -182,9 +177,9 @@ fun WidgetConfigureScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            GlobalScope.launch(Dispatchers.IO) {
+            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
                 val newPaths = photoStorage.replacePhotos(uris.toList(), photoPaths)
-                withContext(Dispatchers.Main) {
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
                     photoPaths = newPaths
                 }
             }
@@ -279,7 +274,8 @@ fun WidgetConfigureScreen(
                             onValueChange = { opacity = it },
                             valueRange = 0f..100f,
                             steps = 19
-                        Text(
+                        )
+Text(
                             text = "调整背景的不透明度，数值越低越透明",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -330,13 +326,13 @@ fun WidgetConfigureScreen(
                                 if (photoPaths.isNotEmpty()) {
                                     OutlinedButton(
                                         onClick = {
-                                        GlobalScope.launch(Dispatchers.IO) {
-                                            photoStorage.clearPhotos(photoPaths)
-                                            withContext(Dispatchers.Main) {
-                                                photoPaths = emptyList()
+                                            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+                                                photoStorage.clearPhotos(photoPaths)
+                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                                    photoPaths = emptyList()
+                                                }
                                             }
-                                        }
-                                    },
+                                        },
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Text("清除照片")
@@ -435,6 +431,7 @@ fun WidgetConfigureScreen(
                             }
                         }
                     }
+                }
                 }
 
                 if (isCountdownWidget || isSingleSelection) {
@@ -657,5 +654,4 @@ fun WidgetConfigureScreen(
             }
         }
     }
-}
 }
