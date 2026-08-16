@@ -75,7 +75,9 @@ class CountdownWidgetProvider : AppWidgetProvider() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_USER_PRESENT -> {
                 CountdownWidgetScheduler.schedule(context)
-                updateAllWidgets(context)
+                val manager = AppWidgetManager.getInstance(context)
+                val ids = manager.getAppWidgetIds(ComponentName(context, CountdownWidgetProvider::class.java))
+                updateWidgets(context, ids, manager)
             }
         }
     }
@@ -119,7 +121,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                         }
 
                         val views = RemoteViews(context.packageName, layoutRes).apply {
-                            setInt(R.id.widget_countdown_bg, "setImageAlpha", 255)
+                            setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)
 
                             if (featured != null) {
                                 val displayInfo = WidgetUpdateHelper.getDisplayInfo(context, featured)
@@ -149,7 +151,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                                 if (backgroundBitmap != null) {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.VISIBLE)
                                     setImageViewBitmap(R.id.widget_countdown_bg_image, backgroundBitmap)
-                                    setInt(R.id.widget_countdown_root, "setColorFilter", 0x66000000)
+                                    setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 100)
                                 } else {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.GONE)
                                     setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)

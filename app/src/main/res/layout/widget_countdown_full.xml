@@ -5,19 +5,19 @@
     android:layout_height="match_parent">
 
     <ImageView
+        android:id="@+id/widget_countdown_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg_shape" />
+
+    <ImageView
         android:id="@+id/widget_countdown_bg_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@null"
         android:scaleType="centerCrop"
         android:src="@android:color/transparent" />
-
-    <ImageView
-        android:id="@+id/widget_countdown_bg"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/widget_bg_shape" />
 
     <LinearLayout
         android:layout_width="match_parent"
