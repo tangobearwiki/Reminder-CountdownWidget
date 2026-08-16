@@ -454,6 +454,9 @@ object WidgetConfigStore {
             .remove("widget_${appWidgetId}_filter_type")
             .remove("widget_${appWidgetId}_custom_ids")
             .remove("widget_${appWidgetId}_opacity")
+            .remove("widget_${appWidgetId}_photo_paths")
+            .remove("widget_${appWidgetId}_rotation_hours")
+            .remove("widget_${appWidgetId}_accent_color")
             .commit()
     }
 
@@ -466,5 +469,46 @@ object WidgetConfigStore {
     fun getWidgetOpacity(context: Context, appWidgetId: Int): Int {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getInt("widget_${appWidgetId}_opacity", 100)
+    }
+
+    // ===== Countdown Widget 扩展：背景照片 =====
+
+    fun saveWidgetPhotoPaths(context: Context, appWidgetId: Int, paths: List<String>) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putString("widget_${appWidgetId}_photo_paths", paths.joinToString("\u001F"))
+            .commit()
+    }
+
+    fun getWidgetPhotoPaths(context: Context, appWidgetId: Int): List<String> {
+        val str = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString("widget_${appWidgetId}_photo_paths", "") ?: ""
+        if (str.isEmpty()) return emptyList()
+        return str.split("\u001F").filter { it.isNotBlank() }
+    }
+
+    // ===== Countdown Widget 扩展：照片轮换间隔 =====
+
+    fun saveWidgetRotationHours(context: Context, appWidgetId: Int, hours: Int) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putInt("widget_${appWidgetId}_rotation_hours", hours.coerceIn(1, 168))
+            .commit()
+    }
+
+    fun getWidgetRotationHours(context: Context, appWidgetId: Int): Int {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getInt("widget_${appWidgetId}_rotation_hours", 24)
+    }
+
+    // ===== Countdown Widget 扩展：主题色条 =====
+
+    fun saveWidgetAccentColor(context: Context, appWidgetId: Int, color: Int) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putInt("widget_${appWidgetId}_accent_color", color)
+            .commit()
+    }
+
+    fun getWidgetAccentColor(context: Context, appWidgetId: Int): Int {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getInt("widget_${appWidgetId}_accent_color", 0xFF76E4F7.toInt())
     }
 }

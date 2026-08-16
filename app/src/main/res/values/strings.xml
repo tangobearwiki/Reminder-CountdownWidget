@@ -3,4 +3,5 @@
     <string name="widget_name_1x2">提醒胶囊</string>
     <string name="widget_name_2x2">提醒卡片</string>
     <string name="widget_name_4x2">提醒列表</string>
+    <string name="widget_name_countdown">倒数倒计时</string>
 </resources>

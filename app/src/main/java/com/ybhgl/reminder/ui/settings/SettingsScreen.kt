@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material.icons.filled.CropLandscape
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Card
@@ -118,6 +119,7 @@ import android.content.ComponentName
 import com.ybhgl.reminder.widget.ReminderWidget1x2
 import com.ybhgl.reminder.widget.ReminderWidget2x2
 import com.ybhgl.reminder.widget.ReminderWidget4x2
+import com.ybhgl.reminder.widget.CountdownWidgetProvider
 import com.ybhgl.reminder.widget.WidgetConfigStore
 import com.ybhgl.reminder.widget.WidgetConfigureScreen
 import com.ybhgl.reminder.widget.WidgetUpdateHelper
@@ -189,8 +191,9 @@ fun SettingsScreen(
     val active1x2Ids = remember { appWidgetManager.getAppWidgetIds(ComponentName(context, ReminderWidget1x2::class.java)) }
     val active2x2Ids = remember { appWidgetManager.getAppWidgetIds(ComponentName(context, ReminderWidget2x2::class.java)) }
     val active4x2Ids = remember { appWidgetManager.getAppWidgetIds(ComponentName(context, ReminderWidget4x2::class.java)) }
+    val activeCountdownIds = remember { appWidgetManager.getAppWidgetIds(ComponentName(context, CountdownWidgetProvider::class.java)) }
 
-    val activeWidgets = remember(active1x2Ids, active2x2Ids, active4x2Ids) {
+    val activeWidgets = remember(active1x2Ids, active2x2Ids, active4x2Ids, activeCountdownIds) {
         val list = mutableListOf<ActiveWidgetInfo>()
         active1x2Ids.forEach { id ->
             list.add(ActiveWidgetInfo(id, "提醒胶囊 (1x2)", "ReminderWidget1x2", true))
@@ -200,6 +203,9 @@ fun SettingsScreen(
         }
         active4x2Ids.forEach { id ->
             list.add(ActiveWidgetInfo(id, "提醒列表 (4x2)", "ReminderWidget4x2", false))
+        }
+        activeCountdownIds.forEach { id ->
+            list.add(ActiveWidgetInfo(id, "倒数倒计时", "CountdownWidgetProvider", true))
         }
         list
     }
@@ -257,11 +263,15 @@ fun SettingsScreen(
             if (configuringWidget != null) {
                 val widget = configuringWidget!!
                 val isSingleSelection = widget.isSingleSelection
+                val isCountdownWidget = widget.providerClassName.contains("CountdownWidgetProvider")
                 val appWidgetId = widget.id
                 val initialOpacity = remember(appWidgetId) { WidgetConfigStore.getWidgetOpacity(context, appWidgetId) }
                 val initialSelectedId = remember(appWidgetId) { WidgetConfigStore.get1x2Or2x2Config(context, appWidgetId) }
                 val initialFilterType = remember(appWidgetId) { if (!isSingleSelection) WidgetConfigStore.get4x2FilterType(context, appWidgetId) else "all" }
                 val initialCustomIds = remember(appWidgetId) { if (!isSingleSelection) WidgetConfigStore.get4x2CustomIds(context, appWidgetId) else emptySet<Int>() }
+                val initialPhotoPaths = remember(appWidgetId) { if (isCountdownWidget) WidgetConfigStore.getWidgetPhotoPaths(context, appWidgetId) else emptyList() }
+                val initialRotationHours = remember(appWidgetId) { if (isCountdownWidget) WidgetConfigStore.getWidgetRotationHours(context, appWidgetId) else 24 }
+                val initialAccentColor = remember(appWidgetId) { if (isCountdownWidget) WidgetConfigStore.getWidgetAccentColor(context, appWidgetId) else 0xFF76E4F7.toInt() }
 
                 Dialog(
                     onDismissRequest = { configuringWidget = null },
@@ -273,15 +283,25 @@ fun SettingsScreen(
                     ) {
                         WidgetConfigureScreen(
                             isSingleSelection = isSingleSelection,
+                            isCountdownWidget = isCountdownWidget,
                             initialOpacity = initialOpacity,
                             initialSelectedId = initialSelectedId,
                             initialFilterType = initialFilterType,
                             initialCustomIds = initialCustomIds,
+                            initialPhotoPaths = initialPhotoPaths,
+                            initialRotationHours = initialRotationHours,
+                            initialAccentColor = initialAccentColor,
                             onCancel = { configuringWidget = null },
-                            onSave = { selectedId, filterType, customIds, opacity, items ->
+                            onSave = { selectedId, filterType, customIds, opacity, items, photoPaths, rotationHours, accentColor ->
                                 WidgetConfigStore.saveWidgetOpacity(context, appWidgetId, opacity)
 
-                                if (isSingleSelection) {
+                                if (isCountdownWidget) {
+                                    WidgetConfigStore.save1x2Or2x2Config(context, appWidgetId, selectedId)
+                                    WidgetConfigStore.saveWidgetPhotoPaths(context, appWidgetId, photoPaths)
+                                    WidgetConfigStore.saveWidgetRotationHours(context, appWidgetId, rotationHours)
+                                    WidgetConfigStore.saveWidgetAccentColor(context, appWidgetId, accentColor)
+                                    CountdownWidgetProvider.updateAllWidgets(context)
+                                } else if (isSingleSelection) {
                                     WidgetConfigStore.save1x2Or2x2Config(context, appWidgetId, selectedId)
                                     val is1x2 = widget.providerClassName.contains("ReminderWidget1x2")
                                     if (is1x2) {
@@ -1196,6 +1216,7 @@ private fun WidgetManagementCard(
                         widget.providerClassName.contains("ReminderWidget1x2") -> Icons.Filled.CropLandscape
                         widget.providerClassName.contains("ReminderWidget2x2") -> Icons.Filled.Event
                         widget.providerClassName.contains("ReminderWidget4x2") -> Icons.AutoMirrored.Filled.ViewList
+                        widget.providerClassName.contains("CountdownWidgetProvider") -> Icons.Filled.Timer
                         else -> Icons.Default.Widgets
                     }
                     SettingsActionItem(

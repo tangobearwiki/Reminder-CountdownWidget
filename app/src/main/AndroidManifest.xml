@@ -115,6 +115,26 @@
                 android:resource="@xml/widget_info_4x2" />
         </receiver>
 
+        <!-- Countdown Widget (from countdown-widget-android) -->
+        <receiver
+            android:name=".widget.CountdownWidgetProvider"
+            android:label="@string/widget_name_countdown"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="com.ybhgl.reminder.action.COUNTDOWN_WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_countdown" />
+        </receiver>
+
         <service
             android:name=".widget.ReminderListWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
