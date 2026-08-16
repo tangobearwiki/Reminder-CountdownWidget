@@ -119,13 +119,13 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                         }
 
                         val views = RemoteViews(context.packageName, layoutRes).apply {
-                            setInt(R.id.widget_countdown_root, "setBackgroundResource", R.drawable.widget_background_countdown)
+                            setInt(R.id.widget_countdown_bg, "setImageAlpha", 255)
 
                             if (featured != null) {
                                 val displayInfo = WidgetUpdateHelper.getDisplayInfo(context, featured)
 
                                 setTextViewText(R.id.widget_countdown_days_value, displayInfo.days)
-                                setTextColor(R.id.widget_countdown_days_value, Color.WHITE)
+                                setTextColor(R.id.widget_countdown_days_value, context.getColor(R.color.widget_text_primary))
 
                                 // 点击跳转到对应提醒
                                 val detailIntent = Intent(context, MainActivity::class.java).apply {
@@ -149,10 +149,10 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                                 if (backgroundBitmap != null) {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.VISIBLE)
                                     setImageViewBitmap(R.id.widget_countdown_bg_image, backgroundBitmap)
-                                    setInt(R.id.widget_countdown_overlay, "setBackgroundColor", 0x66000000)
+                                    setInt(R.id.widget_countdown_root, "setColorFilter", 0x66000000)
                                 } else {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.GONE)
-                                    setInt(R.id.widget_countdown_overlay, "setBackgroundColor", Color.TRANSPARENT)
+                                    setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)
                                 }
 
                                 // 根据布局模式绑定不同内容
@@ -160,25 +160,25 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                                     WidgetLayoutMode.SMALL -> {
                                         // small 模式只显示数字，不绑定额外内容
                                     }
-                                    WidgetLayoutMode.COMPACT -> bindCompact(this, featured, displayInfo)
+                                    WidgetLayoutMode.COMPACT -> bindCompact(this, context, featured, displayInfo)
                                     WidgetLayoutMode.FULL -> bindFull(this, context, widgetId, featured, displayInfo)
                                 }
                             } else {
                                 // 无提醒时显示占位
                                 setTextViewText(R.id.widget_countdown_days_value, "0")
-                                setTextColor(R.id.widget_countdown_days_value, Color.WHITE)
+                                setTextColor(R.id.widget_countdown_days_value, context.getColor(R.color.widget_text_primary))
                                 setViewVisibility(R.id.widget_countdown_bg_image, View.GONE)
-                                setInt(R.id.widget_countdown_overlay, "setBackgroundColor", Color.TRANSPARENT)
+                                setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)
 
                                 when (layoutMode) {
                                     WidgetLayoutMode.COMPACT -> {
                                         setTextViewText(R.id.widget_countdown_title, "暂无日程")
-                                        setTextViewText(R.id.widget_countdown_days_label, "天")
+                                        setTextViewText(R.id.widget_countdown_unit, "天")
                                         setTextViewText(R.id.widget_countdown_target_date, "——")
                                     }
                                     WidgetLayoutMode.FULL -> {
                                         setTextViewText(R.id.widget_countdown_title, "暂无日程")
-                                        setTextViewText(R.id.widget_countdown_days_label, "天")
+                                        setTextViewText(R.id.widget_countdown_unit, "天")
                                         setTextViewText(R.id.widget_countdown_target_date, "——")
                                     }
                                     else -> {}
@@ -206,15 +206,16 @@ class CountdownWidgetProvider : AppWidgetProvider() {
 
         private fun bindCompact(
             views: RemoteViews,
+            context: Context,
             reminder: ReminderItem,
             displayInfo: WidgetDisplayInfo
         ) {
             views.setTextViewText(R.id.widget_countdown_title, displayInfo.title)
-            views.setTextViewText(R.id.widget_countdown_days_label, compactLabel(displayInfo))
+            views.setTextViewText(R.id.widget_countdown_unit, compactLabel(displayInfo))
             views.setTextViewText(R.id.widget_countdown_target_date, displayInfo.dateString)
-            views.setTextColor(R.id.widget_countdown_title, 0xFFE7ECF5.toInt())
-            views.setTextColor(R.id.widget_countdown_days_label, 0xFFCAD5E2.toInt())
-            views.setTextColor(R.id.widget_countdown_target_date, 0xFF93A4B8.toInt())
+            views.setTextColor(R.id.widget_countdown_title, context.getColor(R.color.widget_accent_annual))
+            views.setTextColor(R.id.widget_countdown_unit, context.getColor(R.color.widget_text_secondary))
+            views.setTextColor(R.id.widget_countdown_target_date, context.getColor(R.color.widget_text_secondary))
         }
 
         private fun bindFull(
@@ -224,16 +225,18 @@ class CountdownWidgetProvider : AppWidgetProvider() {
             reminder: ReminderItem,
             displayInfo: WidgetDisplayInfo
         ) {
-            // 主题色条
+            // 彩色顶栏
             val accentColor = WidgetConfigStore.getWidgetAccentColor(context, widgetId)
-            views.setInt(R.id.widget_countdown_accent_bar, "setBackgroundColor", accentColor)
+            views.setInt(R.id.widget_countdown_header_bg, "setColorFilter", accentColor)
 
             views.setTextViewText(R.id.widget_countdown_title, displayInfo.title)
-            views.setTextViewText(R.id.widget_countdown_days_label, displayInfo.label + displayInfo.unit)
+            views.setTextViewText(R.id.widget_countdown_days_label, displayInfo.label)
+            views.setTextViewText(R.id.widget_countdown_unit, displayInfo.unit)
             views.setTextViewText(R.id.widget_countdown_target_date, displayInfo.dateString)
             views.setTextColor(R.id.widget_countdown_title, Color.WHITE)
-            views.setTextColor(R.id.widget_countdown_days_label, 0xFFCAD5E2.toInt())
-            views.setTextColor(R.id.widget_countdown_target_date, 0xFF93A4B8.toInt())
+            views.setTextColor(R.id.widget_countdown_days_label, context.getColor(R.color.widget_text_secondary))
+            views.setTextColor(R.id.widget_countdown_unit, context.getColor(R.color.widget_text_primary))
+            views.setTextColor(R.id.widget_countdown_target_date, context.getColor(R.color.widget_text_secondary))
 
             // 描述（使用 reminder 的 notes）
             if (reminder.notes.isNotBlank()) {
@@ -260,6 +263,15 @@ class CountdownWidgetProvider : AppWidgetProvider() {
             SMALL,
             COMPACT,
             FULL
+        }
+
+        private fun compactUnitLabel(statusLabel: String): String {
+            return when (statusLabel) {
+                "days left" -> "天"
+                "happening today" -> "今"
+                "days since" -> "天"
+                else -> "天"
+            }
         }
 
         private fun resolveLayoutMode(options: Bundle?): WidgetLayoutMode {

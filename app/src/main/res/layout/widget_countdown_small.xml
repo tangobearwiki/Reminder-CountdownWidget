@@ -12,22 +12,35 @@
         android:scaleType="centerCrop"
         android:src="@android:color/transparent" />
 
+    <ImageView
+        android:id="@+id/widget_countdown_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg_shape" />
+
     <LinearLayout
-        android:id="@+id/widget_countdown_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="10dp">
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/widget_countdown_days_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-black"
-            android:gravity="center"
-            android:text="0"
-            android:textColor="#FFFFFF"
-            android:textSize="38sp" />
+            android:textColor="@color/widget_text_primary"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:text="0" />
+
+        <TextView
+            android:id="@+id/widget_countdown_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="12sp"
+            android:text="天" />
     </LinearLayout>
 </FrameLayout>

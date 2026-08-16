@@ -204,7 +204,7 @@ fun WidgetConfigureScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isSingleSelection) "配置桌面小部件" else "配置列表展示") },
+                title = { Text(if (isCountdownWidget) "自定义倒数倒计时" else if (isSingleSelection) "配置桌面小部件" else "配置列表展示") },
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
