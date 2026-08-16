@@ -5,13 +5,6 @@
     android:layout_height="match_parent">
 
     <ImageView
-        android:id="@+id/widget_countdown_bg"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/widget_bg_shape" />
-
-    <ImageView
         android:id="@+id/widget_countdown_bg_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -19,93 +12,66 @@
         android:scaleType="centerCrop"
         android:src="@android:color/transparent" />
 
-    <LinearLayout
+    <View
+        android:id="@+id/widget_countdown_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:background="#CC0D0D1A" />
 
-        <!-- 彩色顶栏 -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <ImageView
-                android:id="@+id/widget_countdown_header_bg"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="fitXY"
-                android:src="@drawable/widget_header_shape" />
-            <TextView
-                android:id="@+id/widget_countdown_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:paddingStart="12dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp"
-                android:text="事件"
-                android:textAlignment="center"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </FrameLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:padding="16dp">
 
-        <!-- 主体：天数 -->
+        <TextView
+            android:id="@+id/widget_countdown_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#E0E0F0"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:text="事件" />
+
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="bottom|center_horizontal"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+            <TextView
+                android:id="@+id/widget_countdown_days_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="bottom|center_horizontal"
-                android:orientation="horizontal">
-                <TextView
-                    android:id="@+id/widget_countdown_days_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/widget_text_primary"
-                    android:textSize="42sp"
-                    android:textStyle="bold"
-                    android:text="0" />
-                <TextView
-                    android:id="@+id/widget_countdown_unit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/widget_text_secondary"
-                    android:textSize="12sp"
-                    android:layout_marginStart="4dp"
-                    android:text="天" />
-            </LinearLayout>
+                android:textColor="#FFFFFF"
+                android:textSize="44sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-black"
+                android:text="0" />
+            <TextView
+                android:id="@+id/widget_countdown_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#B0B0C8"
+                android:textSize="12sp"
+                android:layout_marginStart="3dp"
+                android:layout_marginBottom="4dp"
+                android:text="天" />
         </LinearLayout>
 
-        <!-- 分割线 -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0.6dp"
-            android:background="@color/widget_divider" />
-
-        <!-- 底部日期 -->
-        <FrameLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/widget_countdown_target_date"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp">
-            <TextView
-                android:id="@+id/widget_countdown_target_date"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="@color/widget_text_secondary"
-                android:textSize="12sp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:text="——" />
-        </FrameLayout>
+            android:textColor="#8888AA"
+            android:textSize="10sp"
+            android:layout_marginTop="4dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="——" />
     </LinearLayout>
 </FrameLayout>

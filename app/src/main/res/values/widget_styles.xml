@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CountdownWidgetTitle">
+        <item name="android:textColor">#1A1A2E</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="CountdownWidgetDays">
+        <item name="android:textColor">#1A1A2E</item>
+        <item name="android:textSize">44sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="CountdownWidgetLabel">
+        <item name="android:textColor">#8888AA</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style name="CountdownWidgetDate">
+        <item name="android:textColor">#8888AA</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+</resources>

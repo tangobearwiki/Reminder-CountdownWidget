@@ -121,7 +121,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                         }
 
                         val views = RemoteViews(context.packageName, layoutRes).apply {
-                            setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)
+                            setInt(R.id.widget_countdown_root, "setBackgroundResource", R.drawable.widget_background_countdown)
 
                             if (featured != null) {
                                 val displayInfo = WidgetUpdateHelper.getDisplayInfo(context, featured)
@@ -151,10 +151,10 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                                 if (backgroundBitmap != null) {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.VISIBLE)
                                     setImageViewBitmap(R.id.widget_countdown_bg_image, backgroundBitmap)
-                                    setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 100)
+                                    setInt(R.id.widget_countdown_overlay, "setBackgroundColor", 0x88000000)
                                 } else {
                                     setViewVisibility(R.id.widget_countdown_bg_image, View.GONE)
-                                    setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)
+                                    setInt(R.id.widget_countdown_root, "setBackgroundResource", R.drawable.widget_background_countdown)
                                 }
 
                                 // 根据布局模式绑定不同内容
@@ -170,7 +170,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                                 setTextViewText(R.id.widget_countdown_days_value, "0")
                                 setTextColor(R.id.widget_countdown_days_value, context.getColor(R.color.widget_text_primary))
                                 setViewVisibility(R.id.widget_countdown_bg_image, View.GONE)
-                                setInt(R.id.widget_countdown_bg_image, "setImageAlpha", 0)
+                                setInt(R.id.widget_countdown_root, "setBackgroundResource", R.drawable.widget_background_countdown)
 
                                 when (layoutMode) {
                                     WidgetLayoutMode.COMPACT -> {
@@ -229,7 +229,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
         ) {
             // 彩色顶栏
             val accentColor = WidgetConfigStore.getWidgetAccentColor(context, widgetId)
-            views.setInt(R.id.widget_countdown_header_bg, "setColorFilter", accentColor)
+            views.setInt(R.id.widget_countdown_accent_bar, "setBackgroundColor", accentColor)
 
             views.setTextViewText(R.id.widget_countdown_title, displayInfo.title)
             views.setTextViewText(R.id.widget_countdown_days_label, displayInfo.label)
