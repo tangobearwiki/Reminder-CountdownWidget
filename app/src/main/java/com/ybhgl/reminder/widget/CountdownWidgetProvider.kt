@@ -102,8 +102,7 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                 try {
                     val repository = (context.applicationContext as ReminderApplication).container.reminderRepository
                     val reminders = repository.getAllRemindersStream().first()
-                    val photoStorage = WidgetPhotoStorage(context)
-
+                    
                     for (widgetId in appWidgetIds) {
                         val configuredId = WidgetConfigStore.get1x2Or2x2Config(context, widgetId)
                         val featured = if (configuredId != -1) {
