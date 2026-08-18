@@ -214,6 +214,7 @@ import com.ybhgl.reminder.data.colorPaletteFlow
 import com.ybhgl.reminder.data.AppColorPalette
 import com.ybhgl.reminder.ui.detail.BirthdayListScreen
 import com.ybhgl.reminder.ui.detail.PeriodScreen
+import com.ybhgl.reminder.ui.detail.PeriodTabContent
 import com.ybhgl.reminder.ui.detail.DetailScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

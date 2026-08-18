@@ -236,7 +236,7 @@ fun PeriodScreen(
     }
 }
 
-private fun warmMessage(reminder: ReminderItem, prediction: PeriodCalculator.PeriodPrediction?): String {
+private fun warmMessage(reminder: ReminderItem?, prediction: PeriodCalculator.PeriodPrediction?): String {
     val today = LocalDate.now()
     return when {
         prediction == null -> "记录下上次经期开始日期，我们一起关注周期吧"
