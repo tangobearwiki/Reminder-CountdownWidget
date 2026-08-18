@@ -11,11 +11,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ybhgl.reminder.ReminderApplication
 import com.ybhgl.reminder.data.ReminderItem
+import com.ybhgl.reminder.data.ReminderNotificationConfig
+import com.ybhgl.reminder.data.NotificationTime
 import com.ybhgl.reminder.util.PeriodCalculator
+import com.ybhgl.reminder.util.ReminderScheduler
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -426,6 +431,7 @@ fun PeriodTabContent(
                 Text("记录本次经期开始")
             }
         }
+        PeriodNotificationCard(reminder)
     }
 }
 
@@ -506,3 +512,114 @@ private fun PeriodOverviewCard(
         }
     }
 }
+
+
+@Composable
+private fun PeriodNotificationCard(reminder: ReminderItem?) {
+    val context = LocalContext.current
+    val notifConfig = reminder?.notificationConfig ?: ReminderNotificationConfig()
+    var enabled by remember { mutableStateOf(notifConfig.isEnabled) }
+    var daysBefore by remember { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.daysBefore ?: 1) }
+    var hour by remember { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.time?.hour ?: 9) }
+    var minute by remember { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.time?.minute ?: 0) }
+    val repository = (context.applicationContext as ReminderApplication).container.reminderRepository
+    val scope = rememberCoroutineScope()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "经期提醒",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "提前通知预计经期开始",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { checked ->
+                        enabled = checked
+                        val updatedConfig = notifConfig.copy(isEnabled = checked)
+                        if (reminder != null) {
+                            scope.launch {
+                                repository.updateReminder(reminder.copy(notificationConfig = updatedConfig))
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (enabled && reminder != null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                // 提前几天
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("提前提醒", style = MaterialTheme.typography.bodyMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { if (daysBefore > 0) daysBefore-- }) {
+                            Text("-", style = MaterialTheme.typography.titleLarge)
+                        }
+                        Text("$daysBefore 天", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 8.dp))
+                        IconButton(onClick = { if (daysBefore < 14) daysBefore++ }) {
+                            Text("+", style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+                }
+                // 提醒时间
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("提醒时间", style = MaterialTheme.typography.bodyMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = {
+                            hour = (hour - 1 + 24) % 24
+                        }) { Text("调早") }
+                        Text(
+                            text = String.format("%02d:%02d", hour, minute),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        TextButton(onClick = {
+                            hour = (hour + 1) % 24
+                        }) { Text("调晚") }
+                    }
+                }
+                // 保存通知设置
+                TextButton(
+                    onClick = {
+                        val time = java.time.LocalTime.of(hour, minute)
+                        val newTimes = listOf(NotificationTime(daysBefore, time))
+                        val config = notifConfig.copy(isEnabled = true, notificationTimes = newTimes)
+                        scope.launch {
+                            val updated = reminder.copy(notificationConfig = config)
+                            repository.updateReminder(updated)
+                            ReminderScheduler.scheduleReminder(context, updated)
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("应用通知设置")
+                }
+            }
+        }
+    }
+}
+
