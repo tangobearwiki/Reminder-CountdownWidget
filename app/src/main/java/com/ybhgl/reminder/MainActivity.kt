@@ -1434,15 +1434,17 @@ fun ReminderListScreen(
                     val periodReminders = remember(reminderListUiState.itemList) {
                         reminderListUiState.itemList.filter { it.type == ReminderType.PERIOD }
                     }
-                    PeriodTabContent(
-                        reminders = periodReminders,
-                        isDark = isSystemInDarkTheme(),
-                        topBarHeightDp = with(LocalDensity.current) { topBarHeightPx.toDp() },
-                        dynamicTopPadding = (with(LocalDensity.current) { topBarHeightPx.toDp() } + with(LocalDensity.current) { titleOffsetPx.toDp() }).coerceAtLeast(0.dp),
-                        onNavigateToPeriodAdd = {
-                            navController.navigate(Routes.addReminder(ReminderType.PERIOD.name))
-                        }
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        PeriodTabContent(
+                            reminders = periodReminders,
+                            isDark = isSystemInDarkTheme(),
+                            topBarHeightDp = with(LocalDensity.current) { topBarHeightPx.toDp() },
+                            dynamicTopPadding = (with(LocalDensity.current) { topBarHeightPx.toDp() } + with(LocalDensity.current) { titleOffsetPx.toDp() }).coerceAtLeast(0.dp),
+                            onNavigateToPeriodAdd = {
+                                navController.navigate(Routes.addReminder(ReminderType.PERIOD.name))
+                            }
+                        )
+                    }
                     return@HorizontalPager
                 }
                 val filteredItems = remember(reminderListUiState.itemList, page) {

@@ -125,7 +125,7 @@ fun PeriodScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "❤ 小可爱要好好照顾自己",
+                            text = "周期小贴士",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFD81B60)
@@ -237,16 +237,17 @@ fun PeriodScreen(
 }
 
 private fun warmMessage(reminder: ReminderItem?, prediction: PeriodCalculator.PeriodPrediction?): String {
+    @Suppress("UNUSED_VALUE")
     val today = LocalDate.now()
     return when {
-        prediction == null -> "记录下上次经期开始日期，我们一起关注周期吧"
+        prediction == null -> "记录上次日期后即可查看周期预测"
         prediction.isInPeriodNow -> {
-            if (prediction.dayInCycle <= 2) "第一两天最辛苦，多喝热水，多休息，不要着凉了"
-            else "记得用暖宝宝或热水袋罩小腹，不要吃激冷食哦"
+            if (prediction.dayInCycle <= 2) "注意保暖，注意休息"
+            else "注意保暖，避免生冷"
         }
-        prediction.daysUntilNext <= 3 -> "快到时候了，提前准备好电热宝，多吃红枣姜茶罩小手"
-        prediction.daysUntilNext <= 7 -> "还有几天，近期少吃生冷，晚上记得泡泡脚哦"
-        else -> "好好保重身体，每天都要开弃心心的"
+        prediction.daysUntilNext <= 3 -> "近期注意保暖"
+        prediction.daysUntilNext <= 7 -> "留意周期，注意休息"
+        else -> "祝身体安康"
     }
 }
 
@@ -305,7 +306,7 @@ fun PeriodTabContent(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "❤ 小可爱要好好照顾自己",
+                    text = "周期小贴士",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFD81B60)
