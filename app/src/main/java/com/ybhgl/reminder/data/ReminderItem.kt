@@ -73,7 +73,11 @@ data class ReminderItem(
     val notes: String = "",
     val isCustomized: Boolean = false,
     val customHeaderColor: String = "",
-    val customFont: String = ""
+    val customFont: String = "",
+    val periodLength: Int = 5,
+    val cycleLength: Int = 28,
+    @Serializable(with = LocalDateSerializer::class)
+    val lastPeriodStart: LocalDate? = null
 )
 
 @Serializer(forClass = LocalDate::class)

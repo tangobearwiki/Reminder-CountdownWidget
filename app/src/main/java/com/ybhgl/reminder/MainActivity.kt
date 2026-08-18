@@ -219,6 +219,7 @@ import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.lifecycleScope
 import com.ybhgl.reminder.util.ReminderScheduler
 import com.ybhgl.reminder.util.CalendarManager
+import com.ybhgl.reminder.util.PeriodCalculator
 import kotlinx.serialization.ExperimentalSerializationApi
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -2029,6 +2030,14 @@ private fun reminderSortValue(reminder: ReminderItem): Int {
                 Int.MAX_VALUE
             }
         }
+        ReminderType.PERIOD -> {
+            val prediction = PeriodCalculator.predict(reminder, today)
+            if (prediction != null) {
+                prediction.daysUntilNext.coerceAtLeast(0).toInt()
+            } else {
+                Int.MAX_VALUE
+            }
+        }
     }
 }
 
@@ -2807,6 +2816,7 @@ private fun SearchPanelContent(
                             ReminderType.ANNUAL -> "倒数日"
                             ReminderType.COUNT_UP -> "正数日"
                             ReminderType.BIRTHDAY -> "生日"
+                            ReminderType.PERIOD -> "生理期"
                         }
                     } else {
                         val tag = selectedTags.first()
