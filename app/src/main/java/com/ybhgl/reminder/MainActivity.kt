@@ -1440,8 +1440,33 @@ fun ReminderListScreen(
                             isDark = isSystemInDarkTheme(),
                             topBarHeightDp = with(LocalDensity.current) { topBarHeightPx.toDp() },
                             dynamicTopPadding = (with(LocalDensity.current) { topBarHeightPx.toDp() } + with(LocalDensity.current) { titleOffsetPx.toDp() }).coerceAtLeast(0.dp),
-                            onNavigateToPeriodAdd = {
-                                navController.navigate(Routes.addReminder(ReminderType.PERIOD.name))
+                            onRecordPeriodStart = { startDate, periodLen, cycleLen ->
+                                val app = application as ReminderApplication
+                                val repo = app.container.reminderRepository
+                                val scope = rememberCoroutineScope()
+                                scope.launch {
+                                    val existing = periodReminders.firstOrNull()
+                                    val reminder = if (existing != null) {
+                                        existing.copy(
+                                            lastPeriodStart = startDate,
+                                            periodLength = periodLen,
+                                            cycleLength = cycleLen
+                                        )
+                                    } else {
+                                        ReminderItem(
+                                            title = "生理期",
+                                            date = startDate,
+                                            type = ReminderType.PERIOD,
+                                            isLunar = false,
+                                            tag = "健康",
+                                            isPinned = false,
+                                            lastPeriodStart = startDate,
+                                            periodLength = periodLen,
+                                            cycleLength = cycleLen
+                                        )
+                                    }
+                                    if (existing != null) repo.updateReminder(reminder) else repo.insertReminder(reminder)
+                                }
                             }
                         )
                     }

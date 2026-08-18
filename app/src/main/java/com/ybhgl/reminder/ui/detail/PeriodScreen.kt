@@ -281,13 +281,104 @@ fun PeriodTabContent(
     isDark: Boolean,
     topBarHeightDp: androidx.compose.ui.unit.Dp,
     dynamicTopPadding: androidx.compose.ui.unit.Dp,
-    onNavigateToPeriodAdd: () -> Unit
+    onRecordPeriodStart: (LocalDate, Int, Int) -> Unit
 ) {
     val today = LocalDate.now()
     val reminder = reminders.firstOrNull()
     val prediction = remember(reminder, today) { reminder?.let { PeriodCalculator.predict(it, today) } }
     val statusText = remember(reminder, today) { reminder?.let { PeriodCalculator.statusText(it, today) } ?: "未记录" }
     val dateFmt = DateTimeFormatter.ofPattern("M月d日")
+
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    // 弹窗里的状态
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var periodLen by remember { mutableIntStateOf(5) }
+    var cycleLen by remember { mutableIntStateOf(28) }
+
+    if (showDatePicker) {
+        AlertDialog(
+            onDismissRequest = { showDatePicker = false },
+            title = { Text("记录经期开始日期") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "选择上次经期开始的日期",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // 简单的日期选择：用当前日期交互
+                    Text(
+                        text = selectedDate.toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        OutlinedButton(onClick = { selectedDate = selectedDate.minusDays(1) }) {
+                            Text("前一天")
+                        }
+                        TextButton(onClick = { selectedDate = LocalDate.now() }) {
+                            Text("今天")
+                        }
+                        OutlinedButton(onClick = { selectedDate = selectedDate.plusDays(1) }) {
+                            Text("后一天")
+                        }
+                    }
+                    HorizontalDivider()
+                    // 经期天数
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("经期天数", style = MaterialTheme.typography.bodyMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { if (periodLen > 1) periodLen-- }) {
+                                Text("-", style = MaterialTheme.typography.titleLarge)
+                            }
+                            Text("$periodLen 天", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 8.dp))
+                            IconButton(onClick = { if (periodLen < 15) periodLen++ }) {
+                                Text("+", style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                    }
+                    // 周期天数
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("周期天数", style = MaterialTheme.typography.bodyMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { if (cycleLen > 15) cycleLen-- }) {
+                                Text("-", style = MaterialTheme.typography.titleLarge)
+                            }
+                            Text("$cycleLen 天", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 8.dp))
+                            IconButton(onClick = { if (cycleLen < 60) cycleLen++ }) {
+                                Text("+", style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onRecordPeriodStart(selectedDate, periodLen, cycleLen)
+                    showDatePicker = false
+                }) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -321,7 +412,7 @@ fun PeriodTabContent(
         }
 
         if (reminder == null) {
-            EmptyPeriodCard(onNavigateToPeriodAdd)
+            EmptyPeriodCard { showDatePicker = true }
         } else if (prediction != null) {
             PeriodOverviewCard(reminder, statusText, dateFmt, prediction)
         }
