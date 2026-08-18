@@ -12,6 +12,7 @@ import com.ybhgl.reminder.ReminderApplication
 import com.ybhgl.reminder.data.ReminderItem
 import com.ybhgl.reminder.data.ReminderType
 import com.ybhgl.reminder.util.CalendarUtil
+import com.ybhgl.reminder.util.PeriodCalculator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -68,6 +69,7 @@ object WidgetUpdateHelper {
             ReminderType.ANNUAL -> R.color.widget_accent_annual
             ReminderType.COUNT_UP -> R.color.widget_accent_count_up
             ReminderType.BIRTHDAY -> R.color.widget_accent_birthday
+            ReminderType.PERIOD -> R.color.widget_accent_period
         }
 
         when (reminder.type) {
@@ -122,6 +124,22 @@ object WidgetUpdateHelper {
                         days = daysRemaining.toString()
                     }
                     dateString = if (reminder.isLunar) CalendarUtil.formatLunarDateShort(nextDate) else nextDate.toString()
+                }
+            }
+            ReminderType.PERIOD -> {
+                val prediction = PeriodCalculator.predict(reminder, today)
+                if (prediction == null) {
+                    label = "未记录"
+                    days = "0"
+                    dateString = reminder.date.toString()
+                } else if (prediction.isInPeriodNow) {
+                    label = "经期第"
+                    days = prediction.dayInCycle.toString()
+                    dateString = prediction.nextStart.toString()
+                } else {
+                    label = "还有"
+                    days = prediction.daysUntilNext.toString()
+                    dateString = prediction.nextStart.toString()
                 }
             }
         }

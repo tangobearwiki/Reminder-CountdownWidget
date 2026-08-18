@@ -52,7 +52,8 @@ data class RepeatInfo(
 enum class ReminderType {
     ANNUAL, // For recurring events like birthdays
     COUNT_UP, // For counting days since an event
-    BIRTHDAY // For birthday reminders
+    BIRTHDAY, // For birthday reminders
+    PERIOD // For menstrual cycle tracking
 }
 
 @Serializable

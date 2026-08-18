@@ -892,7 +892,8 @@ data class ReminderCardVisuals(
 private enum class ReminderTab(val title: String, val filter: (ReminderItem) -> Boolean) {
     COUNTDOWN("倒数", { it.type == ReminderType.ANNUAL }),
     COUNTUP("正数", { it.type == ReminderType.COUNT_UP }),
-    BIRTHDAY("生日", { it.type == ReminderType.BIRTHDAY })
+    BIRTHDAY("生日", { it.type == ReminderType.BIRTHDAY }),
+    PERIOD("生理期", { it.type == ReminderType.PERIOD })
 }
 
 data class ReminderDisplayInfo(
@@ -987,6 +988,21 @@ internal fun reminderDisplayInfo(
                 Triple("生日还有", daysRemaining.coerceAtLeast(0), formattedDate)
             }
         }
+        ReminderType.PERIOD -> {
+            when (val prediction = PeriodCalculator.predict(reminder, today)) {
+                null -> Triple("未记录", 0, reminder.date.toString())
+                else -> {
+                    val formattedNext = prediction.nextStart.format(DateTimeFormatter.ofPattern("yyyy-MM-dd EEEE", Locale.CHINA))
+                    if (prediction.isInPeriodNow) {
+                        Triple("经期第", prediction.dayInCycle, formattedNext)
+                    } else if (prediction.daysUntilNext == 0L) {
+                        Triple("就是今天", 0, formattedNext)
+                    } else {
+                        Triple("还有", prediction.daysUntilNext.coerceAtLeast(0).toInt(), formattedNext)
+                    }
+                }
+            }.let { it as Triple<String, Int, String> }
+        }
     }
 
     val headerTitle = buildHeaderTitle(reminder.title, headerLabelSuffix)
@@ -1008,6 +1024,8 @@ private fun getDefaultRawColor(type: ReminderType, isDark: Boolean): Color {
         !isDark && type == ReminderType.ANNUAL -> Color(0xFF1E88E5)
         !isDark && type == ReminderType.COUNT_UP -> Color(0xFFF28C20)
         !isDark && type == ReminderType.BIRTHDAY -> Color(0xFFE53935)
+        !isDark && type == ReminderType.PERIOD -> Color(0xFFEC407A)
+        isDark && type == ReminderType.PERIOD -> Color(0xFFF48FB1)
         isDark && type == ReminderType.ANNUAL -> Color(0xFF64B5F6)
         isDark && type == ReminderType.BIRTHDAY -> Color(0xFFEF5350)
         else -> Color(0xFFF7A03A) // isDark && COUNT_UP
@@ -1756,6 +1774,7 @@ fun ReminderListScreen(
                                     val currentType = when (currentTab) {
                                         ReminderTab.COUNTDOWN -> ReminderType.ANNUAL
                                         ReminderTab.COUNTUP -> ReminderType.COUNT_UP
+                                        ReminderTab.PERIOD -> ReminderType.PERIOD
                                         ReminderTab.BIRTHDAY -> ReminderType.BIRTHDAY
                                     }
                                     navController.navigate(Routes.addReminder(currentType.name))

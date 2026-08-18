@@ -8,5 +8,6 @@
     <color name="widget_accent_annual">#1E88E5</color>
     <color name="widget_accent_count_up">#F28C20</color>
     <color name="widget_accent_birthday">#E53935</color>
+    <color name="widget_accent_period">#EC407A</color>
     <color name="widget_divider">#E0E0E0</color>
 </resources>
