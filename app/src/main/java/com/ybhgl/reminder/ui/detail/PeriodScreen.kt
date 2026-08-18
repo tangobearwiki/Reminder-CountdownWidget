@@ -415,6 +415,16 @@ fun PeriodTabContent(
             EmptyPeriodCard { showDatePicker = true }
         } else if (prediction != null) {
             PeriodOverviewCard(reminder, statusText, dateFmt, prediction)
+            // 录入本次开始（弹窗更新）
+            Button(
+                onClick = {
+                    selectedDate = prediction.nextStart
+                    showDatePicker = true
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("记录本次经期开始")
+            }
         }
     }
 }
