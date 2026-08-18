@@ -825,7 +825,7 @@ fun ReminderApp() {
                     isDark = isSystemInDarkTheme(),
                     onBack = { navController.popBackStack() },
                     onPeriodNotificationToggle = { },
-                    onRecordPeriodStart = { _, _, _ -> }
+                    onRecordPeriodStart = { }
                 )
             }
             composable(route = Routes.SETTINGS) {
