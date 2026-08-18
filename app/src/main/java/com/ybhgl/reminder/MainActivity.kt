@@ -825,7 +825,7 @@ fun ReminderApp() {
                     isDark = isSystemInDarkTheme(),
                     onBack = { navController.popBackStack() },
                     onPeriodNotificationToggle = { },
-                    onRecordPeriodStart = { }
+                    onRecordPeriodStart = { _, _, _ -> }
                 )
             }
             composable(route = Routes.SETTINGS) {
@@ -1434,6 +1434,8 @@ fun ReminderListScreen(
                     val periodReminders = remember(reminderListUiState.itemList) {
                         reminderListUiState.itemList.filter { it.type == ReminderType.PERIOD }
                     }
+                    val periodScope = rememberCoroutineScope()
+                    val periodContext = LocalContext.current
                     Box(modifier = Modifier.fillMaxSize()) {
                         PeriodTabContent(
                             reminders = periodReminders,
@@ -1441,10 +1443,9 @@ fun ReminderListScreen(
                             topBarHeightDp = with(LocalDensity.current) { topBarHeightPx.toDp() },
                             dynamicTopPadding = (with(LocalDensity.current) { topBarHeightPx.toDp() } + with(LocalDensity.current) { titleOffsetPx.toDp() }).coerceAtLeast(0.dp),
                             onRecordPeriodStart = { startDate, periodLen, cycleLen ->
-                                val app = application as ReminderApplication
-                                val repo = app.container.reminderRepository
-                                val scope = rememberCoroutineScope()
-                                scope.launch {
+                                val appContext = periodContext.applicationContext as ReminderApplication
+                                val repo = appContext.container.reminderRepository
+                                periodScope.launch {
                                     val existing = periodReminders.firstOrNull()
                                     val reminder = if (existing != null) {
                                         existing.copy(
