@@ -41,6 +41,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -212,7 +213,9 @@ import com.ybhgl.reminder.data.dynamicColorFlow
 import com.ybhgl.reminder.data.colorPaletteFlow
 import com.ybhgl.reminder.data.AppColorPalette
 import com.ybhgl.reminder.ui.detail.BirthdayListScreen
+import com.ybhgl.reminder.ui.detail.PeriodScreen
 import com.ybhgl.reminder.ui.detail.DetailScreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
@@ -603,6 +606,8 @@ object Routes {
     const val TAG_MANAGEMENT_PATTERN = "$TAG_MANAGEMENT?isSortMode={isSortMode}"
     const val DETAIL_REMINDER_BASE = "detail_reminder"
     const val DETAIL_REMINDER_PATTERN = "$DETAIL_REMINDER_BASE/{reminderId}"
+    const val PERIOD_BASE = "period"
+    const val PERIOD_PATTERN = PERIOD_BASE
     const val BIRTHDAY_LIST_BASE = "birthday_list"
     const val BIRTHDAY_LIST_PATTERN = "$BIRTHDAY_LIST_BASE/{reminderId}"
     const val REMINDER_SETTING_BASE = "reminder_setting"
@@ -611,6 +616,7 @@ object Routes {
     fun editReminder(reminderId: Int): String = "$EDIT_REMINDER_BASE/$reminderId"
     fun detailReminder(reminderId: Int): String = "$DETAIL_REMINDER_BASE/$reminderId"
     fun birthdayList(reminderId: Int): String = "$BIRTHDAY_LIST_BASE/$reminderId"
+    fun period(): String = PERIOD_BASE
     fun addReminder(initialType: String? = null): String {
         return if (initialType != null) "$ADD_REMINDER_BASE?initialType=$initialType" else ADD_REMINDER_BASE
     }
@@ -811,6 +817,15 @@ fun ReminderApp() {
                 arguments = listOf(navArgument("reminderId") { type = NavType.IntType })
             ) {
                 BirthdayListScreen(navController = navController)
+            }
+            composable(route = Routes.PERIOD_PATTERN) {
+                PeriodScreen(
+                    reminder = null,
+                    isDark = isSystemInDarkTheme(),
+                    onBack = { navController.popBackStack() },
+                    onPeriodNotificationToggle = { },
+                    onRecordPeriodStart = { }
+                )
             }
             composable(route = Routes.SETTINGS) {
                 SettingsScreen(
@@ -1607,11 +1622,24 @@ fun ReminderListScreen(
                 } else {
                     TopAppBar(
                         title = {
+                            // 祁煠 Q版多图轮换页头
+                            val qiyuFaces = remember { listOf(R.drawable.qiyu_1, R.drawable.qiyu_2, R.drawable.qiyu_3, R.drawable.qiyu_4) }
+                            var qiyuIndex by remember { mutableIntStateOf(0) }
+                            LaunchedEffect(Unit) {
+                                while (true) {
+                                    delay(3000)
+                                    qiyuIndex = (qiyuIndex + 1) % qiyuFaces.size
+                                }
+                            }
                             Icon(
-                                painter = painterResource(id = R.drawable.reminder),
-                                contentDescription = "Reminder",
-                                modifier = Modifier.height(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
+                                painter = painterResource(id = qiyuFaces[qiyuIndex]),
+                                contentDescription = "祁煠",
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .graphicsLayer {
+                                        alpha = 0.9f
+                                    },
+                                tint = Color.Unspecified
                             )
                         },
                         windowInsets = TopAppBarDefaults.windowInsets,

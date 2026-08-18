@@ -116,6 +116,29 @@ fun PeriodScreen(
                     }
                 }
 
+                // 暖话提醒
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFE4EC)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "❤ 小可爱要好好照顾自己",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD81B60)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = warmMessage(reminder, prediction),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFAD1457)
+                        )
+                    }
+                }
+
                 // 预测卡片
                 if (prediction != null) {
                     Card(
@@ -210,6 +233,20 @@ fun PeriodScreen(
                 Text("记录本次经期开始")
             }
         }
+    }
+}
+
+private fun warmMessage(reminder: ReminderItem, prediction: PeriodCalculator.PeriodPrediction?): String {
+    val today = LocalDate.now()
+    return when {
+        prediction == null -> "记录下上次经期开始日期，我们一起关注周期吧"
+        prediction.isInPeriodNow -> {
+            if (prediction.dayInCycle <= 2) "第一两天最辛苦，多喝热水，多休息，不要着凉了"
+            else "记得用暖宝宝或热水袋罩小腹，不要吃激冷食哦"
+        }
+        prediction.daysUntilNext <= 3 -> "快到时候了，提前准备好电热宝，多吃红枣姜茶罩小手"
+        prediction.daysUntilNext <= 7 -> "还有几天，近期少吃生冷，晚上记得泡泡脚哦"
+        else -> "好好保重身体，每天都要开弃心心的"
     }
 }
 
