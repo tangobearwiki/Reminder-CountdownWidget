@@ -271,3 +271,136 @@ private fun PredictionRow(label: String, value: String) {
         )
     }
 }
+/**
+ * 生理期首页分支 - 开门见山的一级页面，无需二级跳转
+ */
+@Composable
+fun PeriodTabContent(
+    reminders: List<ReminderItem>,
+    isDark: Boolean,
+    topBarHeightDp: androidx.compose.ui.unit.Dp,
+    dynamicTopPadding: androidx.compose.ui.unit.Dp,
+    onNavigateToPeriodAdd: () -> Unit
+) {
+    val today = LocalDate.now()
+    val reminder = reminders.firstOrNull()
+    val prediction = remember(reminder, today) { reminder?.let { PeriodCalculator.predict(it, today) } }
+    val statusText = remember(reminder, today) { reminder?.let { PeriodCalculator.statusText(it, today) } ?: "未记录" }
+    val dateFmt = DateTimeFormatter.ofPattern("M月d日")
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .padding(top = dynamicTopPadding + 8.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // 暖心提醒卡片
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFFFE4EC)
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "❤ 小可爱要好好照顾自己",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD81B60)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = warmMessage(reminder, prediction),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFAD1457)
+                )
+            }
+        }
+
+        if (reminder == null) {
+            EmptyPeriodCard(onNavigateToPeriodAdd)
+        } else if (prediction != null) {
+            PeriodOverviewCard(reminder, statusText, dateFmt, prediction)
+        }
+    }
+}
+
+@Composable
+private fun EmptyPeriodCard(onAdd: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                Icons.Filled.Favorite,
+                contentDescription = null,
+                tint = Color(0xFFEC407A),
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "还没有生理期记录",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "点击下方按钮记录上次经期开始日期，即可自动预测下次周期",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onAdd) {
+                Text("记录本次经期开始")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PeriodOverviewCard(
+    reminder: ReminderItem,
+    statusText: String,
+    dateFmt: DateTimeFormatter,
+    prediction: PeriodCalculator.PeriodPrediction
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = reminder.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            PredictionRow("上次开始", prediction.lastStart.format(dateFmt))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            PredictionRow("下次预计", prediction.nextStart.format(dateFmt))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            PredictionRow("距下次还有", "${prediction.daysUntilNext} 天")
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            PredictionRow("周期第", "${prediction.dayInCycle} 天")
+            if (prediction.ovulationDate != null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                PredictionRow("排卵日", prediction.ovulationDate.format(dateFmt))
+            }
+        }
+    }
+}

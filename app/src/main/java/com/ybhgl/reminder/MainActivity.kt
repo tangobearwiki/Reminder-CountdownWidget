@@ -1428,6 +1428,22 @@ fun ReminderListScreen(
                     .fillMaxSize(),
                 beyondViewportPageCount = 1
             ) { page ->
+                if (tabs[page] == ReminderTab.PERIOD) {
+                    // 生理期拓直接显示全部内容，开门见山
+                    val periodReminders = remember(reminderListUiState.itemList) {
+                        reminderListUiState.itemList.filter { it.type == ReminderType.PERIOD }
+                    }
+                    PeriodTabContent(
+                        reminders = periodReminders,
+                        isDark = isSystemInDarkTheme(),
+                        topBarHeightDp = with(LocalDensity.current) { topBarHeightPx.toDp() },
+                        dynamicTopPadding = (with(LocalDensity.current) { topBarHeightPx.toDp() } + with(LocalDensity.current) { titleOffsetPx.toDp() }).coerceAtLeast(0.dp),
+                        onNavigateToPeriodAdd = {
+                            navController.navigate(Routes.addReminder(ReminderType.PERIOD.name))
+                        }
+                    )
+                    return@HorizontalPager
+                }
                 val filteredItems = remember(reminderListUiState.itemList, page) {
                     reminderListUiState.itemList.filter(tabs[page].filter)
                 }
