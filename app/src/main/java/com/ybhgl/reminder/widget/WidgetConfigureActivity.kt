@@ -488,6 +488,7 @@ fun WidgetConfigureScreen(
                                                 ReminderType.ANNUAL -> "倒数日 · ${reminder.date}"
                                                 ReminderType.COUNT_UP -> "正数日 · ${reminder.date}"
                                                 ReminderType.BIRTHDAY -> "生日 · ${reminder.date}"
+                                                ReminderType.PERIOD -> "生理期 · ${reminder.date}"
                                             },
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -607,6 +608,7 @@ fun WidgetConfigureScreen(
                                                     ReminderType.ANNUAL -> "倒数日"
                                                     ReminderType.COUNT_UP -> "正数日"
                                                     ReminderType.BIRTHDAY -> "生日"
+                                                    ReminderType.PERIOD -> "生理期"
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant

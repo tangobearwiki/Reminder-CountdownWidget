@@ -132,6 +132,9 @@ object ReminderScheduler {
                             val days = ChronoUnit.DAYS.between(today, targetDate).toInt()
                             if (days == 0) "就是今天" else "还有${days}天"
                         }
+                        com.ybhgl.reminder.data.ReminderType.PERIOD -> {
+                            PeriodCalculator.statusText(item, today)
+                        }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()

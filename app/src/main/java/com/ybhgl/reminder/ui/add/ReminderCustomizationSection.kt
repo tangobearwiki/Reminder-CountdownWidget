@@ -206,6 +206,7 @@ fun ReminderCustomizationSection(
                                 ReminderType.ANNUAL -> "#1E88E5".toComposeColor()
                                 ReminderType.COUNT_UP -> "#F28C20".toComposeColor()
                                 ReminderType.BIRTHDAY -> "#E53935".toComposeColor()
+                                ReminderType.PERIOD -> "#EC407A".toComposeColor()
                             }
                         } else {
                             customHeaderColor.toComposeColor()

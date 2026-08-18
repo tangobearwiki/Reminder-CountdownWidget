@@ -276,6 +276,7 @@ fun AddReminderScreen(
                                     ReminderType.ANNUAL -> "倒数日"
                                     ReminderType.COUNT_UP -> "正数日"
                                     ReminderType.BIRTHDAY -> "生日"
+                                    ReminderType.PERIOD -> "生理期"
                                 }
                                 Text(text)
                             }
