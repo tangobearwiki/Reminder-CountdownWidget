@@ -25,7 +25,12 @@ object ReminderScheduler {
         cancelReminder(context, item)
 
         val baseDate = if (forceNext) LocalDate.now().plusDays(1) else LocalDate.now()
-        val targetDate = CalendarUtil.calculateNextTargetDate(item, baseDate) ?: item.date
+        val targetDate = when (item.type) {
+            com.ybhgl.reminder.data.ReminderType.PERIOD -> {
+                PeriodCalculator.predict(item)?.nextStart ?: item.date
+            }
+            else -> CalendarUtil.calculateNextTargetDate(item, baseDate) ?: item.date
+        }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 

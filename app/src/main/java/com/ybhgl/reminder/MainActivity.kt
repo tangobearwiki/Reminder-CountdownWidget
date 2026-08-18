@@ -1467,6 +1467,8 @@ fun ReminderListScreen(
                                         )
                                     }
                                     if (existing != null) repo.updateReminder(reminder) else repo.insertReminder(reminder)
+                                    // 重新调度通知
+                                    ReminderScheduler.scheduleReminder(periodContext, reminder)
                                 }
                             }
                         )
