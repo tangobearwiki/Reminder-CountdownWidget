@@ -2,17 +2,11 @@ name: Build Release APK
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version name (e.g. 2.9.0)'
-        required: false
-        default: '2.8.2'
 
 jobs:
-  build-release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,6 +25,12 @@ jobs:
       - name: Build Release APK
         run: |
           chmod +x gradlew
+          # 创建签名配置
+          echo 'sdk.dir=/opt/android-sdk' > local.properties
+          echo 'storeFile=$(pwd)/app/release.keystore' >> local.properties
+          echo 'storePassword=hourglass123' >> local.properties
+          echo 'keyAlias=release' >> local.properties
+          echo 'keyPassword=hourglass123' >> local.properties
           ./gradlew :app:assembleReleaseNoMinify
 
       - name: Upload APK
@@ -38,11 +38,3 @@ jobs:
         with:
           name: deepspace-hourglass-release
           path: app/build/outputs/apk/releaseNoMinify/*.apk
-
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: app/build/outputs/apk/releaseNoMinify/*.apk
-          draft: false
-          prerelease: false
