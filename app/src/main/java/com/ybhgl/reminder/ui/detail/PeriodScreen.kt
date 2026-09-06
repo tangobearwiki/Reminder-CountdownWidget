@@ -556,7 +556,11 @@ private fun PeriodNotificationCard(reminder: ReminderItem?) {
                         val updatedConfig = notifConfig.copy(isEnabled = checked)
                         if (reminder != null) {
                             scope.launch {
-                                repository.updateReminder(reminder.copy(notificationConfig = updatedConfig))
+                                val updated = reminder.copy(notificationConfig = updatedConfig)
+                                repository.updateReminder(updated)
+                                // scheduleReminder 内部会在 isEnabled=false 时自动取消已设置的闹钟，
+                                // 否则关闭开关后已调度的闹钟仍会触发
+                                ReminderScheduler.scheduleReminder(context, updated)
                             }
                         }
                     }

@@ -76,7 +76,7 @@ object PeriodCalculator {
         return when {
             prediction.isInPeriodNow -> "经期第 ${prediction.dayInCycle} 天，还有 ${prediction.daysLeftInPeriod} 天结束"
             prediction.daysUntilNext == 0L -> "今天就是经期开始"
-            prediction.daysUntilNext <= 7 -> "预计 $prediction.daysUntilNext 天后开始"
+            prediction.daysUntilNext <= 7 -> "预计 ${prediction.daysUntilNext} 天后开始"
             prediction.ovulationDate != null && today == prediction.ovulationDate -> "今天是排卵日"
             prediction.ovulationDate != null && today.isAfter(prediction.ovulationDate.minusDays(5)) && today.isBefore(prediction.ovulationDate) -> "接近排卵日"
             prediction.safePeriodStart != null && !today.isBefore(prediction.safePeriodStart) && !today.isAfter(prediction.safePeriodEnd) -> "安全期"

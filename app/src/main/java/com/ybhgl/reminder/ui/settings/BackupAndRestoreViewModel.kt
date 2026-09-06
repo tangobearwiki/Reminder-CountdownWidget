@@ -476,6 +476,9 @@ class BackupAndRestoreViewModel(
                 }
             }
             
+            // 合并后按最终数据重新调度所有提醒（insert/update 不会自动调度闹钟）
+            rescheduleAllReminders(context)
+
             // For merge, we don't overwrite user's preference options to avoid disrupting their current theme/layout.
             // Update last backup to clear warning
             BackupPreferences.saveLastBackupTimestamp(context, System.currentTimeMillis())
@@ -510,10 +513,28 @@ class BackupAndRestoreViewModel(
             backupData.customColorSeed?.let { saveCustomColor(context, it) }
             backupData.scrollBehavior?.let { saveScrollBehavior(context, it) }
 
+            // deleteAllReminders 已取消所有闹钟，恢复后必须按新 ID 重建调度，否则提醒全部失效
+            rescheduleAllReminders(context)
+
             // Update last backup to clear warning
             BackupPreferences.saveLastBackupTimestamp(context, System.currentTimeMillis())
 
             return "恢复完成，共导入 ${backupData.reminders.size} 条记录"
+        }
+    }
+
+    /**
+     * 恢复/合并数据后重新调度所有提醒的闹钟与日历事件。
+     * 恢复过程会取消原有闹钟，且 insert/update 不会自动调度，不重建则通知全部失效（直到下次冷启动）。
+     */
+    private suspend fun rescheduleAllReminders(context: Context) {
+        try {
+            reminderRepository.getAllRemindersList().forEach { item ->
+                com.ybhgl.reminder.util.ReminderScheduler.scheduleReminder(context, item)
+                com.ybhgl.reminder.util.CalendarManager.addOrUpdateEvent(context, item)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

@@ -1466,9 +1466,17 @@ fun ReminderListScreen(
                                             cycleLength = cycleLen
                                         )
                                     }
-                                    if (existing != null) repo.updateReminder(reminder) else repo.insertReminder(reminder)
+                                    val savedReminder = if (existing != null) {
+                                        repo.updateReminder(reminder)
+                                        reminder
+                                    } else {
+                                        // 插入后必须拿回数据库生成的真实 ID，
+                                        // 否则闹钟 requestCode / REMINDER_ID 都是 0，无法取消与重调度
+                                        val newId = repo.insertReminder(reminder).toInt()
+                                        reminder.copy(id = newId)
+                                    }
                                     // 重新调度通知
-                                    ReminderScheduler.scheduleReminder(periodContext, reminder)
+                                    ReminderScheduler.scheduleReminder(periodContext, savedReminder)
                                 }
                             }
                         )

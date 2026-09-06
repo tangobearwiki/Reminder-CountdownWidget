@@ -29,6 +29,8 @@ import com.ybhgl.reminder.data.saveViewMode
 import com.ybhgl.reminder.data.scrollBehaviorFlow
 import com.ybhgl.reminder.data.saveScrollBehavior
 import com.ybhgl.reminder.data.BackupPreferences
+import com.ybhgl.reminder.util.CalendarManager
+import com.ybhgl.reminder.util.ReminderScheduler
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -178,6 +180,13 @@ class SettingsViewModel(private val reminderRepository: ReminderRepository) : Vi
 
             reminderRepository.deleteAllReminders()
             backupData.reminders.forEach { reminderRepository.insertReminder(it.copy(id = 0)) }
+
+            // deleteAllReminders 会取消所有闹钟，而 insert 不会自动调度；
+            // 不重建的话恢复后的提醒通知全部失效（直到下次冷启动）
+            reminderRepository.getAllRemindersList().forEach { item ->
+                ReminderScheduler.scheduleReminder(context, item)
+                CalendarManager.addOrUpdateEvent(context, item)
+            }
 
             backupData.themeOption?.let { updateThemePreference(context, it) }
             backupData.pureBlackEnabled?.let { updatePureBlackPreference(context, it) }

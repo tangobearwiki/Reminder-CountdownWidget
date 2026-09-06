@@ -71,7 +71,7 @@ class ReminderReceiver : BroadcastReceiver() {
                         val displayDays = if (isIncludeStartDay) days + 1 else days
                         "第${displayDays}天"
                     }
-                    "ANNUAL", "BIRTHDAY" -> {
+                    "ANNUAL", "BIRTHDAY", "PERIOD" -> {
                         val days = ChronoUnit.DAYS.between(today, targetDate).toInt()
                         if (days == 0) "就是今天" else "还有${days}天"
                     }
@@ -119,6 +119,11 @@ class ReminderReceiver : BroadcastReceiver() {
                             android.util.Log.d("ReminderReceiver", "该事件已开启重复: ${item.repeatInfo}")
                             ReminderScheduler.scheduleReminder(app, item, forceNext = true)
                             android.util.Log.d("ReminderReceiver", "本地闹钟重调度已完成")
+                        } else if (item.type == com.ybhgl.reminder.data.ReminderType.PERIOD) {
+                            // 生理期提醒没有 repeatInfo，但本次触发后仍需为下一周期重新调度
+                            android.util.Log.d("ReminderReceiver", "生理期事件，为下一周期重调度")
+                            ReminderScheduler.scheduleReminder(app, item)
+                            android.util.Log.d("ReminderReceiver", "生理期闹钟重调度已完成")
                         } else {
                             android.util.Log.d("ReminderReceiver", "该事件未开启重复，不处理重调度")
                         }
