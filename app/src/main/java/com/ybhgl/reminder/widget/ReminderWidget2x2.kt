@@ -110,7 +110,7 @@ class ReminderWidget2x2 : AppWidgetProvider() {
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                pendingResult?.finish()
+                pendingResult.finish()
             }
         }
     }

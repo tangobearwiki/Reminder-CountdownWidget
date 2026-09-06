@@ -23,12 +23,19 @@ object CalendarUtil {
         "七月", "八月", "九月", "十月", "冬月", "腊月"
     )
 
+    /**
+     * 计算下一个目标日期。
+     * 防护：repeatInfo.interval <= 0（可能来自损坏的备份数据）时强制按 1 处理，避免死循环。
+     */
     fun calculateNextTargetDate(reminderItem: ReminderItem, baseDate: LocalDate = LocalDate.now()): LocalDate? {
         val repeatInfo = reminderItem.repeatInfo
 
         if (repeatInfo == null) {
             return if (reminderItem.date.isBefore(baseDate)) null else reminderItem.date
         }
+
+        // 关键防护：非法间隔会导致 while 循环永不推进（plusDays(0)），造成 ANR
+        val interval = repeatInfo.interval.coerceAtLeast(1)
 
         if (reminderItem.type == ReminderType.BIRTHDAY && reminderItem.isLunar) {
             // 农历生日：利用 BirthdayCalculator 的逻辑寻找下一个大于等于 baseDate 的生日
@@ -59,10 +66,10 @@ object CalendarUtil {
             // Gregorian calculation
             while (currentDate.isBefore(baseDate)) {
                 currentDate = when (repeatInfo.unit) {
-                    RepeatUnit.DAY -> currentDate.plusDays(repeatInfo.interval.toLong())
-                    RepeatUnit.WEEK -> currentDate.plusWeeks(repeatInfo.interval.toLong())
-                    RepeatUnit.MONTH -> currentDate.plusMonths(repeatInfo.interval.toLong())
-                    RepeatUnit.YEAR -> currentDate.plusYears(repeatInfo.interval.toLong())
+                    RepeatUnit.DAY -> currentDate.plusDays(interval.toLong())
+                    RepeatUnit.WEEK -> currentDate.plusWeeks(interval.toLong())
+                    RepeatUnit.MONTH -> currentDate.plusMonths(interval.toLong())
+                    RepeatUnit.YEAR -> currentDate.plusYears(interval.toLong())
                 }
             }
             return currentDate
@@ -70,11 +77,11 @@ object CalendarUtil {
             // Lunar calculation
             while (currentDate.isBefore(baseDate)) {
                 currentDate = when (repeatInfo.unit) {
-                    RepeatUnit.YEAR -> getNextLunarYearDate(currentDate, repeatInfo.interval)
-                    RepeatUnit.MONTH -> getNextLunarMonthDate(currentDate, repeatInfo.interval)
+                    RepeatUnit.YEAR -> getNextLunarYearDate(currentDate, interval)
+                    RepeatUnit.MONTH -> getNextLunarMonthDate(currentDate, interval)
                     // Lunar day/week repeats are not standard, treat them as gregorian.
-                    RepeatUnit.DAY -> currentDate.plusDays(repeatInfo.interval.toLong())
-                    RepeatUnit.WEEK -> currentDate.plusWeeks(repeatInfo.interval.toLong())
+                    RepeatUnit.DAY -> currentDate.plusDays(interval.toLong())
+                    RepeatUnit.WEEK -> currentDate.plusWeeks(interval.toLong())
                 }
             }
             return currentDate

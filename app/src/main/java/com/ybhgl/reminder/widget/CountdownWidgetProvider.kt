@@ -32,7 +32,9 @@ class CountdownWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         CountdownWidgetScheduler.schedule(context)
-        updateWidgets(context, appWidgetIds, appWidgetManager)
+        // goAsync 持锁：DB 查询是异步的，onReceive 返回后进程可能被回收导致刷新丢失
+        val pendingResult = goAsync()
+        updateWidgets(context, appWidgetIds, appWidgetManager, onComplete = { pendingResult.finish() })
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) {
@@ -54,7 +56,8 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                 CountdownWidgetScheduler.schedule(context)
                 val manager = AppWidgetManager.getInstance(context)
                 val ids = manager.getAppWidgetIds(ComponentName(context, CountdownWidgetProvider::class.java))
-                updateWidgets(context, ids, manager)
+                val pendingResult = goAsync()
+                updateWidgets(context, ids, manager, onComplete = { pendingResult.finish() })
             }
         }
     }
@@ -68,7 +71,12 @@ class CountdownWidgetProvider : AppWidgetProvider() {
             if (ids.isNotEmpty()) updateWidgets(context, ids, manager)
         }
 
-        private fun updateWidgets(context: Context, appWidgetIds: IntArray, appWidgetManager: AppWidgetManager) {
+        private fun updateWidgets(
+            context: Context,
+            appWidgetIds: IntArray,
+            appWidgetManager: AppWidgetManager,
+            onComplete: (() -> Unit)? = null
+        ) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val repository = (context.applicationContext as ReminderApplication).container.reminderRepository
@@ -133,6 +141,8 @@ class CountdownWidgetProvider : AppWidgetProvider() {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                } finally {
+                    onComplete?.invoke()
                 }
             }
         }

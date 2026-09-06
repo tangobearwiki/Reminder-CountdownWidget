@@ -13,10 +13,19 @@ import com.ybhgl.reminder.data.ReminderItem
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 
 object ReminderScheduler {
+    /**
+     * 单个事件最多调度的闹钟槽位数。
+     * requestCode = id * 100 + slot，因此必须远小于 100 以避免侵入其他事件的 requestCode 空间；
+     * 取消时会遍历全部槽位，保证不残留幽灵闹钟。
+     */
+    private const val MAX_ALARM_SLOTS_PER_ITEM = 20
+
     fun scheduleReminder(context: Context, item: ReminderItem, forceNext: Boolean = false) {
+        // 未持久化（id <= 0）的条目不可调度：requestCode 会退化为纯 slot 索引，导致取消/更新错乱
+        if (item.id <= 0) return
+
         if (!item.notificationConfig.isEnabled || !item.notificationConfig.useAppNotification) {
             cancelReminder(context, item)
             return
@@ -34,7 +43,9 @@ object ReminderScheduler {
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        item.notificationConfig.notificationTimes.forEachIndexed { index, notifTime ->
+        item.notificationConfig.notificationTimes
+            .take(MAX_ALARM_SLOTS_PER_ITEM)
+            .forEachIndexed { index, notifTime ->
             val remindDate = if (item.type == com.ybhgl.reminder.data.ReminderType.COUNT_UP) {
                 val daysOffset = if (item.notificationConfig.includeStartDay && notifTime.daysBefore > 0) {
                     notifTime.daysBefore - 1
@@ -88,22 +99,27 @@ object ReminderScheduler {
     }
 
     fun cancelReminder(context: Context, item: ReminderItem) {
+        if (item.id <= 0) return
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        for (index in 0..10) {
+        // 覆盖全部槽位，保证不残留；FLAG_NO_CREATE 避免为不存在的闹钟创建空 PendingIntent
+        for (index in 0 until MAX_ALARM_SLOTS_PER_ITEM) {
             val intent = Intent(context, ReminderReceiver::class.java)
             val requestCode = item.id * 100 + index
-            val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            } else {
-                PendingIntent.FLAG_UPDATE_CURRENT
+            val existing = PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (existing != null) {
+                alarmManager.cancel(existing)
+                existing.cancel()
             }
-            val pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, flags)
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
         }
     }
 
     fun updateActiveNotification(context: Context, item: ReminderItem) {
+        if (item.id <= 0) return
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val activeNotifications = notificationManager.activeNotifications
@@ -120,30 +136,8 @@ object ReminderScheduler {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
-                var subtitle = "来自 Reminder 的提醒"
-                try {
-                    val today = LocalDate.now()
-                    val startDate = item.date
-                    val targetDate = CalendarUtil.calculateNextTargetDate(item, today) ?: item.date
-
-                    subtitle = when (item.type) {
-                        com.ybhgl.reminder.data.ReminderType.COUNT_UP -> {
-                            val isIncludeStartDay = item.notificationConfig.includeStartDay
-                            val days = ChronoUnit.DAYS.between(startDate, today).toInt()
-                            val displayDays = if (isIncludeStartDay) days + 1 else days
-                            "第${displayDays}天"
-                        }
-                        com.ybhgl.reminder.data.ReminderType.ANNUAL, com.ybhgl.reminder.data.ReminderType.BIRTHDAY -> {
-                            val days = ChronoUnit.DAYS.between(today, targetDate).toInt()
-                            if (days == 0) "就是今天" else "还有${days}天"
-                        }
-                        com.ybhgl.reminder.data.ReminderType.PERIOD -> {
-                            PeriodCalculator.statusText(item, today)
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                // 与 ReminderReceiver 共用同一套文案逻辑，避免两处漂移
+                val subtitle = NotificationTextBuilder.buildSubtitle(item)
 
                 val builder = NotificationCompat.Builder(context, "reminder_channel")
                     .setSmallIcon(R.mipmap.ic_launcher)

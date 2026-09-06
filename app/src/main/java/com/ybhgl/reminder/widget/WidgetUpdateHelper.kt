@@ -439,7 +439,7 @@ object WidgetConfigStore {
     fun save1x2Or2x2Config(context: Context, appWidgetId: Int, reminderId: Int) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putInt("widget_${appWidgetId}_reminder_id", reminderId)
-            .commit()
+            .apply()
     }
 
     fun get1x2Or2x2Config(context: Context, appWidgetId: Int): Int {
@@ -451,7 +451,7 @@ object WidgetConfigStore {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putString("widget_${appWidgetId}_filter_type", filterType)
             .putString("widget_${appWidgetId}_custom_ids", customIds.joinToString(","))
-            .commit()
+            .apply()
     }
 
     fun get4x2FilterType(context: Context, appWidgetId: Int): String {
@@ -475,13 +475,13 @@ object WidgetConfigStore {
             .remove("widget_${appWidgetId}_photo_paths")
             .remove("widget_${appWidgetId}_rotation_hours")
             .remove("widget_${appWidgetId}_accent_color")
-            .commit()
+            .apply()
     }
 
     fun saveWidgetOpacity(context: Context, appWidgetId: Int, opacity: Int) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putInt("widget_${appWidgetId}_opacity", opacity)
-            .commit()
+            .apply()
     }
 
     fun getWidgetOpacity(context: Context, appWidgetId: Int): Int {
@@ -494,7 +494,7 @@ object WidgetConfigStore {
     fun saveWidgetPhotoPaths(context: Context, appWidgetId: Int, paths: List<String>) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putString("widget_${appWidgetId}_photo_paths", paths.joinToString("\u001F"))
-            .commit()
+            .apply()
     }
 
     fun getWidgetPhotoPaths(context: Context, appWidgetId: Int): List<String> {
@@ -509,7 +509,7 @@ object WidgetConfigStore {
     fun saveWidgetRotationHours(context: Context, appWidgetId: Int, hours: Int) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putInt("widget_${appWidgetId}_rotation_hours", hours.coerceIn(1, 168))
-            .commit()
+            .apply()
     }
 
     fun getWidgetRotationHours(context: Context, appWidgetId: Int): Int {
@@ -522,7 +522,7 @@ object WidgetConfigStore {
     fun saveWidgetAccentColor(context: Context, appWidgetId: Int, color: Int) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putInt("widget_${appWidgetId}_accent_color", color)
-            .commit()
+            .apply()
     }
 
     fun getWidgetAccentColor(context: Context, appWidgetId: Int): Int {
