@@ -33,12 +33,41 @@ object ReminderScheduler {
 
         cancelReminder(context, item)
 
-        val baseDate = if (forceNext) LocalDate.now().plusDays(1) else LocalDate.now()
-        val targetDate = when (item.type) {
+        val today = LocalDate.now()
+        val currentTargetDate = when (item.type) {
             com.ybhgl.reminder.data.ReminderType.PERIOD -> {
                 PeriodCalculator.predict(item)?.nextStart ?: item.date
             }
-            else -> CalendarUtil.calculateNextTargetDate(item, baseDate) ?: item.date
+            else -> CalendarUtil.calculateNextTargetDate(item, today)
+                ?.takeUnless { item.repeatInfo?.endDate?.isBefore(it) == true }
+                ?: if (item.repeatInfo == null) item.date else return
+        }
+        val now = System.currentTimeMillis()
+        val hasFutureNotificationInCurrentCycle = item.notificationConfig.notificationTimes.any { notifTime ->
+            val remindDate = if (item.type == com.ybhgl.reminder.data.ReminderType.COUNT_UP) {
+                val daysOffset = if (item.notificationConfig.includeStartDay && notifTime.daysBefore > 0) {
+                    notifTime.daysBefore - 1
+                } else {
+                    notifTime.daysBefore
+                }
+                currentTargetDate.plusDays(daysOffset.toLong())
+            } else {
+                currentTargetDate.minusDays(notifTime.daysBefore.toLong())
+            }
+            LocalDateTime.of(remindDate, notifTime.time)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli() > now
+        }
+        val targetDate = if (forceNext && !hasFutureNotificationInCurrentCycle) {
+            when (item.type) {
+                com.ybhgl.reminder.data.ReminderType.PERIOD -> PeriodCalculator.predict(item)?.nextStart ?: item.date
+                else -> CalendarUtil.calculateNextTargetDate(item, today.plusDays(1))
+                    ?.takeUnless { item.repeatInfo?.endDate?.isBefore(it) == true }
+                    ?: return
+            }
+        } else {
+            currentTargetDate
         }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -60,7 +89,7 @@ object ReminderScheduler {
             
             val triggerTime = remindDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            if (triggerTime >= System.currentTimeMillis()) {
+            if (triggerTime >= now) {
                 val intent = Intent(context, ReminderReceiver::class.java).apply {
                     putExtra("REMINDER_ID", item.id)
                     putExtra("REMINDER_TITLE", item.title)

@@ -116,6 +116,7 @@ class BackupAndRestoreViewModel(
             val themeColorPalette = colorPaletteFlow(context).first()
             val customColorSeed = customColorFlow(context).first()
             val scrollBehavior = scrollBehaviorFlow(context).first()
+            val homeBackgroundColor = homeBackgroundColorFlow(context).first()
     
             val backupReminderEnabled = BackupPreferences.backupReminderEnabledFlow(context).first()
             val webDavServer = BackupPreferences.webDavServerFlow(context).first()
@@ -141,7 +142,9 @@ class BackupAndRestoreViewModel(
                 dynamicColorEnabled = dynamicColorEnabled,
                 themeColorPalette = themeColorPalette,
                 customColorSeed = customColorSeed,
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
+                homeBackgroundColor = homeBackgroundColor,
+                homeBackgroundColorConfigured = true
             )
 
             val json = Json.encodeToString(backupData)
@@ -222,6 +225,7 @@ class BackupAndRestoreViewModel(
         val themeColorPalette = colorPaletteFlow(context).first()
         val customColorSeed = customColorFlow(context).first()
         val scrollBehavior = scrollBehaviorFlow(context).first()
+        val homeBackgroundColor = homeBackgroundColorFlow(context).first()
 
         val backupReminderEnabled = BackupPreferences.backupReminderEnabledFlow(context).first()
         val webDavServer = BackupPreferences.webDavServerFlow(context).first()
@@ -247,7 +251,9 @@ class BackupAndRestoreViewModel(
             dynamicColorEnabled = dynamicColorEnabled,
             themeColorPalette = themeColorPalette,
             customColorSeed = customColorSeed,
-            scrollBehavior = scrollBehavior
+            scrollBehavior = scrollBehavior,
+            homeBackgroundColor = homeBackgroundColor,
+            homeBackgroundColorConfigured = true
         )
 
         val json = Json.encodeToString(backupData)
@@ -440,12 +446,9 @@ class BackupAndRestoreViewModel(
                     reminderRepository.insertReminder(newItem.copy(id = 0))
                     insertedCount++
                 } else {
-                    val isAllSettingsEqual = matched.isLunar == newItem.isLunar &&
-                            matched.tag == newItem.tag &&
-                            matched.isPinned == newItem.isPinned &&
-                            matched.repeatInfo == newItem.repeatInfo &&
-                            matched.notificationConfig == newItem.notificationConfig &&
-                            matched.notes == newItem.notes
+                        // ReminderItem 是数据类，清除数据库 ID 后比较完整业务状态，
+                        // 避免遗漏经期参数或自定义样式导致恢复被错误跳过。
+                        val isAllSettingsEqual = matched.copy(id = 0) == newItem.copy(id = 0)
 
                     if (!isAllSettingsEqual) {
                         reminderRepository.updateReminder(newItem.copy(id = matched.id))
@@ -512,6 +515,9 @@ class BackupAndRestoreViewModel(
             backupData.themeColorPalette?.let { saveColorPalette(context, it) }
             backupData.customColorSeed?.let { saveCustomColor(context, it) }
             backupData.scrollBehavior?.let { saveScrollBehavior(context, it) }
+            if (backupData.homeBackgroundColorConfigured) {
+                saveHomeBackgroundColor(context, backupData.homeBackgroundColor)
+            }
 
             // deleteAllReminders 已取消所有闹钟，恢复后必须按新 ID 重建调度，否则提醒全部失效
             rescheduleAllReminders(context)

@@ -211,6 +211,7 @@ import com.ybhgl.reminder.data.themeOptionFlow
 import com.ybhgl.reminder.data.cardColoringFlow
 import com.ybhgl.reminder.data.dynamicColorFlow
 import com.ybhgl.reminder.data.colorPaletteFlow
+import com.ybhgl.reminder.data.homeBackgroundColorFlow
 import com.ybhgl.reminder.data.AppColorPalette
 import com.ybhgl.reminder.ui.detail.BirthdayListScreen
 import com.ybhgl.reminder.ui.detail.PeriodScreen
@@ -312,6 +313,8 @@ class MainActivity : FragmentActivity() {
             val themeColorPalette by colorPaletteFlowInstance.collectAsState(initial = AppColorPalette.PURPLE)
             val customColorFlowInstance = remember(context) { com.ybhgl.reminder.data.customColorFlow(context) }
             val customColorSeedInt by customColorFlowInstance.collectAsState(initial = 0xFF6650A4.toInt())
+            val homeBackgroundColorInt by remember(context) { homeBackgroundColorFlow(context) }
+                .collectAsState(initial = null)
 
             LaunchedEffect(themeOption) {
                 com.ybhgl.reminder.ui.common.CustomToast.currentAppTheme = themeOption
@@ -352,7 +355,7 @@ class MainActivity : FragmentActivity() {
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = homeBackgroundColorInt?.let { Color(it) } ?: MaterialTheme.colorScheme.background
                 ) {
                     Box {
                         if (isAppLockEnabled && !com.ybhgl.reminder.data.AppLockState.isUnlocked.value) {
@@ -360,7 +363,10 @@ class MainActivity : FragmentActivity() {
                                 onUnlockSuccess = { com.ybhgl.reminder.data.AppLockState.isUnlocked.value = true }
                             )
                         } else {
-                            ReminderApp()
+                            ReminderApp(
+                                backgroundColor = homeBackgroundColorInt?.let { Color(it) }
+                                    ?: MaterialTheme.colorScheme.background
+                            )
                         }
 
                         if (showPermissionDialog && (!isAppLockEnabled || com.ybhgl.reminder.data.AppLockState.isUnlocked.value)) {
@@ -634,7 +640,7 @@ object Routes {
 
 @OptIn(ExperimentalSerializationApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun ReminderApp() {
+fun ReminderApp(backgroundColor: Color = MaterialTheme.colorScheme.background) {
     val context = LocalContext.current
     val permissionsToRequest = remember {
         val list = mutableListOf(
@@ -1415,7 +1421,7 @@ fun ReminderListScreen(
 
     Scaffold(
         floatingActionButton = {},
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = backgroundColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = modifier.nestedScroll(customNestedScrollConnection)
     ) { innerPadding ->

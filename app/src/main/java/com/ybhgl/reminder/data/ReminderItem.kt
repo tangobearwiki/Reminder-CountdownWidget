@@ -119,5 +119,7 @@ data class BackupData(
     val dynamicColorEnabled: Boolean? = null,
     val themeColorPalette: AppColorPalette? = null,
     val customColorSeed: Int? = null,
-    val scrollBehavior: String? = null
+    val scrollBehavior: String? = null,
+    val homeBackgroundColor: Int? = null,
+    val homeBackgroundColorConfigured: Boolean = false
 )

@@ -313,6 +313,7 @@ object BackupPreferences {
             val themeColorPalette = colorPaletteFlow(context).first()
             val customColorSeed = customColorFlow(context).first()
             val scrollBehavior = scrollBehaviorFlow(context).first()
+            val homeBackgroundColor = homeBackgroundColorFlow(context).first()
 
             val backupReminderEnabled = backupReminderEnabledFlow(context).first()
             val webDavServer = webDavServerFlow(context).first()
@@ -338,7 +339,9 @@ object BackupPreferences {
                 dynamicColorEnabled = dynamicColorEnabled,
                 themeColorPalette = themeColorPalette,
                 customColorSeed = customColorSeed,
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
+                homeBackgroundColor = homeBackgroundColor,
+                homeBackgroundColorConfigured = true
             )
 
             val json = kotlinx.serialization.json.Json.encodeToString(backupData)
@@ -366,7 +369,7 @@ object BackupPreferences {
                         if (pickedDir != null && pickedDir.exists() && pickedDir.isDirectory) {
                             val autoDir = pickedDir.findFile("Auto") ?: pickedDir.createDirectory("Auto")
                             if (autoDir != null && autoDir.exists() && autoDir.isDirectory) {
-                                val newFile = autoDir.createFile("application/json", fileName)
+                                val newFile = autoDir.createFile("application/json", "$fileName.json")
                                 if (newFile != null) {
                                     try {
                                         context.contentResolver.openOutputStream(newFile.uri)?.use { output ->

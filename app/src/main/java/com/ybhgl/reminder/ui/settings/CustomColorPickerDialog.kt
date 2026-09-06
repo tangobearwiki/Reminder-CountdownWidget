@@ -46,7 +46,8 @@ import kotlin.math.*
 fun CustomColorPickerDialog(
     initialColor: Color,
     onDismissRequest: () -> Unit,
-    onColorConfirmed: (Color) -> Unit
+    onColorConfirmed: (Color) -> Unit,
+    title: String = "自定义种子色"
 ) {
     // 采用 HSV 色彩空间进行精确双向映射
     val initialHsv = remember(initialColor) {
@@ -95,7 +96,7 @@ fun CustomColorPickerDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "自定义种子色",
+                    text = title,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )

@@ -49,6 +49,7 @@ private val CARD_COLORING_KEY = booleanPreferencesKey("card_coloring_enabled")
 private val DYNAMIC_COLOR_KEY = booleanPreferencesKey("dynamic_color_enabled")
 private val COLOR_PALETTE_KEY = stringPreferencesKey("theme_color_palette")
 private val CUSTOM_COLOR_SEED_KEY = androidx.datastore.preferences.core.intPreferencesKey("custom_color_seed")
+private val HOME_BACKGROUND_COLOR_KEY = androidx.datastore.preferences.core.intPreferencesKey("home_background_color")
 
 private val Context.themeDataStore: DataStore<Preferences> by preferencesDataStore(
     name = THEME_DATA_STORE_NAME
@@ -190,5 +191,23 @@ fun customColorFlow(context: Context): Flow<Int> =
 suspend fun saveCustomColor(context: Context, color: Int) {
     context.themeDataStore.edit { preferences ->
         preferences[CUSTOM_COLOR_SEED_KEY] = color
+    }
+}
+
+fun homeBackgroundColorFlow(context: Context): Flow<Int?> =
+    context.themeDataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences -> preferences[HOME_BACKGROUND_COLOR_KEY] }
+
+suspend fun saveHomeBackgroundColor(context: Context, color: Int?) {
+    context.themeDataStore.edit { preferences ->
+        if (color == null) preferences.remove(HOME_BACKGROUND_COLOR_KEY)
+        else preferences[HOME_BACKGROUND_COLOR_KEY] = color
     }
 }

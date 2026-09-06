@@ -72,7 +72,7 @@ object CalendarUtil {
                     RepeatUnit.YEAR -> currentDate.plusYears(interval.toLong())
                 }
             }
-            return currentDate
+            return currentDate.takeUnless { repeatInfo.endDate?.isBefore(it) == true }
         } else {
             // Lunar calculation
             while (currentDate.isBefore(baseDate)) {
@@ -84,7 +84,7 @@ object CalendarUtil {
                     RepeatUnit.WEEK -> currentDate.plusWeeks(interval.toLong())
                 }
             }
-            return currentDate
+            return currentDate.takeUnless { repeatInfo.endDate?.isBefore(it) == true }
         }
     }
 

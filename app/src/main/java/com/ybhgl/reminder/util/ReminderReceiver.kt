@@ -39,13 +39,18 @@ class ReminderReceiver : BroadcastReceiver() {
 
                 // 优先从数据库读取最新数据：闹钟携带的 Intent extras 只是调度时的快照，
                 // 用户编辑事件后旧数据会过期；同时可自愈"幽灵闹钟"。
+                var queryFailed = false
                 val item = if (reminderId > 0) {
-                    runCatching { repository.getReminderById(reminderId) }
-                        .onFailure { Log.e(TAG, "查询事件失败，回退到 Intent 快照数据", it) }
-                        .getOrNull()
+                    try {
+                        repository.getReminderById(reminderId)
+                    } catch (error: Exception) {
+                        queryFailed = true
+                        Log.e(TAG, "查询事件失败，回退到 Intent 快照数据", error)
+                        null
+                    }
                 } else null
 
-                if (reminderId > 0 && item == null) {
+                if (reminderId > 0 && item == null && !queryFailed) {
                     // 事件已被删除但闹钟残留：静默丢弃，不再打扰用户
                     Log.w(TAG, "事件 $reminderId 已不存在，丢弃残留闹钟")
                     return@launch

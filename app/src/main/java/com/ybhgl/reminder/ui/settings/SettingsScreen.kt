@@ -170,6 +170,8 @@ fun SettingsScreen(
     val themeColorPalette by colorPalettePreferenceFlow.collectAsState(initial = AppColorPalette.PURPLE)
     val customColorPreferenceFlow = remember(context) { viewModel.customColorPreferenceFlow(context) }
     val customColorSeedInt by customColorPreferenceFlow.collectAsState(initial = 0xFF6650A4.toInt())
+    val homeBackgroundColorInt by remember(context) { viewModel.homeBackgroundColorPreferenceFlow(context) }
+        .collectAsState(initial = null)
     val defaultPagePreferenceFlow = remember(context) { viewModel.defaultPageFlow(context) }
     val selectedDefaultPage by defaultPagePreferenceFlow.collectAsState(initial = AppDefaultPage.COUNTDOWN)
     val scrollBehaviorFlow = remember(context) { viewModel.scrollBehaviorPreferenceFlow(context) }
@@ -396,6 +398,12 @@ fun SettingsScreen(
                     onScrollBehaviorSelected = { behavior ->
                         coroutineScope.launch {
                             viewModel.updateScrollBehaviorPreference(context, behavior.name)
+                        }
+                    },
+                    selectedBackgroundColor = homeBackgroundColorInt?.let { Color(it) },
+                    onBackgroundColorSelected = { color ->
+                        coroutineScope.launch {
+                            viewModel.updateHomeBackgroundColorPreference(context, color?.toArgb())
                         }
                     }
                 )
@@ -745,9 +753,24 @@ private fun HomePageSettingsCard(
     selectedPage: AppDefaultPage,
     onPageSelected: (AppDefaultPage) -> Unit,
     currentScrollBehavior: ScrollBehaviorMode,
-    onScrollBehaviorSelected: (ScrollBehaviorMode) -> Unit
+    onScrollBehaviorSelected: (ScrollBehaviorMode) -> Unit,
+    selectedBackgroundColor: Color?,
+    onBackgroundColorSelected: (Color?) -> Unit
 ) {
     var showScrollBehaviorDialog by rememberSaveable { mutableStateOf(false) }
+    var showBackgroundColorPicker by rememberSaveable { mutableStateOf(false) }
+
+    if (showBackgroundColorPicker) {
+        CustomColorPickerDialog(
+            initialColor = selectedBackgroundColor ?: MaterialTheme.colorScheme.background,
+            title = "自定义首页背景",
+            onDismissRequest = { showBackgroundColorPicker = false },
+            onColorConfirmed = {
+                onBackgroundColorSelected(it)
+                showBackgroundColorPicker = false
+            }
+        )
+    }
 
     if (showScrollBehaviorDialog) {
         AlertDialog(
@@ -827,6 +850,48 @@ private fun HomePageSettingsCard(
                     selectedOption = selectedPage,
                     onOptionSelected = onPageSelected
                 )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { showBackgroundColorPicker = true }
+                    )
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "首页背景",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (selectedBackgroundColor == null) "跟随主题背景" else "自定义颜色",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(selectedBackgroundColor ?: MaterialTheme.colorScheme.background)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                )
+            }
+
+            if (selectedBackgroundColor != null) {
+                TextButton(
+                    onClick = { onBackgroundColorSelected(null) },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("恢复主题背景")
+                }
             }
 
             Row(
