@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
@@ -82,7 +83,6 @@ android {
         compose = true
         buildConfig = true
     }
-    // 自定义生成的 APK 文件名
     applicationVariants.all {
         val variant = this
         variant.outputs.forEach { output ->
@@ -94,6 +94,13 @@ android {
                 apkOutput.outputFileName = "Reminder-v${variant.versionName}-$abi-${variant.buildType.name}.apk"
             }
         }
+    }
+}
+
+// 统一 Kotlin 与 Java 的 JVM target，避免 "Inconsistent JVM Target Compatibility" 编译错误
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
     }
 }
 

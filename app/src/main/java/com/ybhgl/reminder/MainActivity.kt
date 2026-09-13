@@ -1237,6 +1237,10 @@ fun ReminderListScreen(
     val lastDataChangeTimestamp by remember(context) { BackupPreferences.lastDataChangeTimestampFlow(context) }.collectAsState(initial = 0L)
     val showBackupAlert = backupReminderEnabled && lastDataChangeTimestamp > lastBackupTimestamp
 
+    // 读取用户自定义的主屏背景色，未设置时回退到主题背景色
+    val homeBackgroundColorInt by remember(context) { homeBackgroundColorFlow(context) }.collectAsState(initial = null)
+    val backgroundColor = homeBackgroundColorInt?.let { Color(it) } ?: MaterialTheme.colorScheme.background
+
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     var searchIconOffset by remember { mutableStateOf(Offset.Zero) }
     
@@ -2673,12 +2677,33 @@ private fun EmptyStateCard(modifier: Modifier = Modifier) {
         )
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp, vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // 装饰性图标：用 primaryContainer 圆形底色衬托，增加视觉焦点
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = "目前还没有提醒",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
             )
             Text(
                 text = "点击右下角的加号添加第一个纪念日吧！",

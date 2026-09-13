@@ -1,8 +1,7 @@
 name: One-time Qiyu theme migration
 
+# 一次性迁移：仅手动触发，避免每次 push 都运行浪费 CI 资源
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
