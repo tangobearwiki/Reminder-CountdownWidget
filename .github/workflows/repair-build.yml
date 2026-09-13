@@ -1,0 +1,75 @@
+name: One-time build repair
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Repair MainActivity compile error
+        id: patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE='app/src/main/java/com/ybhgl/reminder/MainActivity.kt'
+          if [ ! -f "$FILE" ]; then
+            FILE='app/src/main/java/com/tangobear/qiyu/reminder/MainActivity.kt'
+          fi
+
+          if ! grep -q 'containerColor = backgroundColor' "$FILE"; then
+            echo 'No known backgroundColor build error found.'
+            echo 'patched=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if grep -q 'val backgroundColor = MaterialTheme.colorScheme.background' "$FILE"; then
+            echo 'backgroundColor already declared.'
+            echo 'patched=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          python3 - "$FILE" <<'PY'
+          from pathlib import Path
+          import sys
+          path = Path(sys.argv[1])
+          text = path.read_text()
+          needle = '    Scaffold(\n'
+          replacement = '    val backgroundColor = MaterialTheme.colorScheme.background\n\n' + needle
+          if text.count(needle) != 1:
+              raise SystemExit(f'Expected exactly one Scaffold declaration, found {text.count(needle)}')
+          path.write_text(text.replace(needle, replacement, 1))
+          PY
+
+          grep -n -A2 -B2 'val backgroundColor = MaterialTheme.colorScheme.background' "$FILE"
+          echo 'patched=true' >> "$GITHUB_OUTPUT"
+
+      - name: Verify compile
+        if: steps.patch.outputs.patched == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Commit repair
+        if: steps.patch.outputs.patched == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/ybhgl/reminder/MainActivity.kt app/src/main/java/com/tangobear/qiyu/reminder/MainActivity.kt 2>/dev/null || git add -A
+          git commit -m 'fix: restore missing main screen background color'
+          git push
