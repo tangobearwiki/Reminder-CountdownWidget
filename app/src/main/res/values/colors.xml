@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Qiyu-inspired sea-glass palette: deep ocean blue, icy cyan and pearl neutrals. -->
+    <color name="qiyu_night">#07151F</color>
+    <color name="qiyu_deep_blue">#0C2C3A</color>
+    <color name="qiyu_ocean">#2F93AA</color>
+    <color name="qiyu_ice">#9EDDEA</color>
+    <color name="qiyu_pearl">#EAF5F7</color>
+    <color name="qiyu_silver">#B7C9CE</color>
+    <color name="qiyu_glow">#78C9DD</color>
+
     <!-- Light Mode Widget Colors -->
-    <color name="widget_bg">#FFFFFF</color>
-    <color name="widget_list_item_bg">#F4F4F4</color>
-    <color name="widget_text_primary">#2C2C2C</color>
-    <color name="widget_text_secondary">#666666</color>
-    <color name="widget_accent_annual">#1E88E5</color>
-    <color name="widget_accent_count_up">#F28C20</color>
-    <color name="widget_accent_birthday">#E53935</color>
-    <color name="widget_accent_period">#EC407A</color>
-    <color name="widget_divider">#E0E0E0</color>
+    <color name="widget_bg">#F4FBFD</color>
+    <color name="widget_list_item_bg">#E7F3F6</color>
+    <color name="widget_text_primary">#10242C</color>
+    <color name="widget_text_secondary">#55717A</color>
+    <color name="widget_accent_annual">#2F93AA</color>
+    <color name="widget_accent_count_up">#D4885F</color>
+    <color name="widget_accent_birthday">#C76883</color>
+    <color name="widget_accent_period">#5B86B6</color>
+    <color name="widget_divider">#C8DDE2</color>
 </resources>
