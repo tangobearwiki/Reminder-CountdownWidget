@@ -118,18 +118,20 @@ fun GestureSetupScreen(
                     val pathStr = path.joinToString(",")
                     when (step) {
                         0 -> { // Verify old
-                            if (pathStr == existingPassword) {
-                                lockState = GestureLockState.SUCCESS
-                                message = "验证成功"
-                                coroutineScope.launch {
-                                    delay(500)
-                                    lockState = GestureLockState.NORMAL
-                                    step = 1
-                                    message = "请绘制新手势密码 (至少4个点)"
+                            coroutineScope.launch {
+                                if (SecurityPreferences.verifyGesturePassword(context, pathStr)) {
+                                    lockState = GestureLockState.SUCCESS
+                                    message = "验证成功"
+                                    coroutineScope.launch {
+                                        delay(500)
+                                        lockState = GestureLockState.NORMAL
+                                        step = 1
+                                        message = "请绘制新手势密码 (至少4个点)"
+                                    }
+                                } else {
+                                    lockState = GestureLockState.ERROR
+                                    message = "密码错误，请重试"
                                 }
-                            } else {
-                                lockState = GestureLockState.ERROR
-                                message = "密码错误，请重试"
                             }
                         }
                         1 -> { // First input
