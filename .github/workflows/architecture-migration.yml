@@ -1,0 +1,68 @@
+name: One-time architecture migration
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Migrate package namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD='com.ybhgl.reminder'
+          NEW='com.tangobear.qiyu.reminder'
+
+          if ! git grep -q "$OLD" -- ':!*.md' ':!*.txt'; then
+            echo "Old namespace not found; nothing to migrate."
+            exit 0
+          fi
+
+          echo "Replacing $OLD -> $NEW across tracked source/config files..."
+          git grep -lz "$OLD" -- ':!*.md' ':!*.txt' | xargs -0 -r perl -pi -e "s/\Q$OLD\E/$NEW/g"
+
+          if [ -d app/src/main/java/com/ybhgl/reminder ]; then
+            mkdir -p app/src/main/java/com/tangobear/qiyu
+            mv app/src/main/java/com/ybhgl/reminder app/src/main/java/com/tangobear/qiyu/reminder
+            rm -rf app/src/main/java/com/ybhgl
+          fi
+
+          if [ -d app/src/test/java/com/ybhgl/reminder ]; then
+            mkdir -p app/src/test/java/com/tangobear/qiyu
+            mv app/src/test/java/com/ybhgl/reminder app/src/test/java/com/tangobear/qiyu/reminder
+            rm -rf app/src/test/java/com/ybhgl
+          fi
+
+          if [ -d app/src/androidTest/java/com/ybhgl/reminder ]; then
+            mkdir -p app/src/androidTest/java/com/tangobear/qiyu
+            mv app/src/androidTest/java/com/ybhgl/reminder app/src/androidTest/java/com/tangobear/qiyu/reminder
+            rm -rf app/src/androidTest/java/com/ybhgl
+          fi
+
+          git grep -n "$OLD" || true
+          git status --short
+
+      - name: Validate and commit migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/build.gradle.kts
+          ! git grep -q 'com.ybhgl.reminder' -- ':!*.md' ':!*.txt'
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'refactor: migrate app to com.tangobear.qiyu.reminder' || exit 0
+          git push
