@@ -36,23 +36,19 @@ abstract class ReminderDatabase : RoomDatabase() {
 
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // 1. 创建 tags 表
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS `tags` (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-                        `name` TEXT NOT NULL, 
-                        `color` TEXT NOT NULL DEFAULT '#2196F3', 
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `color` TEXT NOT NULL DEFAULT '#2196F3',
                         `sortOrder` INTEGER NOT NULL DEFAULT 0
                     )
                 """)
-                // 2. 创建索引
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_tags_name` ON `tags` (`name`)")
-                
-                // 3. 将现存 reminders 去重 category 作为初始数据导入
                 db.execSQL("""
                     INSERT OR IGNORE INTO `tags` (name, color, sortOrder)
-                    SELECT DISTINCT category, '#2196F3', 0 
-                    FROM reminders 
+                    SELECT DISTINCT category, '#2196F3', 0
+                    FROM reminders
                     WHERE category IS NOT NULL AND category != ''
                 """)
             }
@@ -77,6 +73,7 @@ abstract class ReminderDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE reminders ADD COLUMN customFont TEXT NOT NULL DEFAULT ''")
             }
         }
+
         private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE reminders ADD COLUMN periodLength INTEGER NOT NULL DEFAULT 5")
@@ -87,16 +84,24 @@ abstract class ReminderDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): ReminderDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     ReminderDatabase::class.java,
                     "reminder_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
-                .fallbackToDestructiveMigration()
-                .build()
-                INSTANCE = instance
-                instance
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8
+                    )
+                    // Never silently erase user reminders when a migration is missing.
+                    // A future schema change must ship with an explicit migration.
+                    .build()
+                    .also { INSTANCE = it }
             }
         }
     }
