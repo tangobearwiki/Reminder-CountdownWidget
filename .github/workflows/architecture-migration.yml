@@ -24,14 +24,15 @@ jobs:
           set -euo pipefail
           OLD='com.ybhgl.reminder'
           NEW='com.tangobear.qiyu.reminder'
+          WORKFLOW='.github/workflows/architecture-migration.yml'
 
-          if ! git grep -q "$OLD" -- ':!*.md' ':!*.txt'; then
+          if ! git grep -q "$OLD" -- ':!*.md' ':!*.txt' "$WORKFLOW"; then
             echo "Old namespace not found; nothing to migrate."
             exit 0
           fi
 
-          echo "Replacing $OLD -> $NEW across tracked source/config files..."
-          git grep -lz "$OLD" -- ':!*.md' ':!*.txt' | xargs -0 -r perl -pi -e "s/\Q$OLD\E/$NEW/g"
+          echo "Replacing $OLD -> $NEW across app source/config files..."
+          git grep -lz "$OLD" -- ':!*.md' ':!*.txt' ":!$WORKFLOW" | xargs -0 -r perl -pi -e "s/\Q$OLD\E/$NEW/g"
 
           if [ -d app/src/main/java/com/ybhgl/reminder ]; then
             mkdir -p app/src/main/java/com/tangobear/qiyu
@@ -51,7 +52,11 @@ jobs:
             rm -rf app/src/androidTest/java/com/ybhgl
           fi
 
-          git grep -n "$OLD" || true
+          if git grep -n "$OLD" -- ':!*.md' ':!*.txt' ":!$WORKFLOW"; then
+            echo 'Old namespace remains outside migration workflow.'
+            exit 1
+          fi
+
           git status --short
 
       - name: Validate and commit migration
@@ -59,10 +64,16 @@ jobs:
         run: |
           set -euo pipefail
           test -f app/build.gradle.kts
-          ! git grep -q 'com.ybhgl.reminder' -- ':!*.md' ':!*.txt'
+          ! git grep -q 'com.ybhgl.reminder' -- ':!*.md' ':!*.txt' ':!.github/workflows/architecture-migration.yml'
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'refactor: migrate app to com.tangobear.qiyu.reminder' || exit 0
+          git add app/ gradle/ settings.gradle.kts build.gradle.kts gradle.properties 2>/dev/null || true
+          git add app/src . 2>/dev/null || true
+          git reset -- ".github/workflows/architecture-migration.yml" 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'No package migration changes to commit.'
+            exit 0
+          fi
+          git commit -m 'refactor: migrate app to com.tangobear.qiyu.reminder'
           git push
