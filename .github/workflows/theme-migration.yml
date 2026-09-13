@@ -1,0 +1,52 @@
+name: One-time Qiyu theme migration
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  theme:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply Qiyu defaults
+        shell: bash
+        run: |
+          set -euo pipefail
+          THEME='app/src/main/java/com/tangobear/qiyu/reminder/ui/theme/Theme.kt'
+          if [ ! -f "$THEME" ]; then
+            echo "Waiting for package migration to create $THEME"
+            exit 0
+          fi
+
+          perl -pi -e 's/dynamicColor: Boolean = true/dynamicColor: Boolean = false/' "$THEME"
+          perl -pi -e 's/colorPalette: AppColorPalette = AppColorPalette\.PURPLE/colorPalette: AppColorPalette = AppColorPalette.CYAN/' "$THEME"
+          perl -pi -e 's/customColorSeed: Color = Color\(0xFF6750A4\)/customColorSeed: Color = Color(0xFF5FAFC4)/' "$THEME"
+          perl -pi -e 's/primary = Color\(0xFF136776\)/primary = Color(0xFF2B8197)/' "$THEME"
+          perl -pi -e 's/primary = Color\(0xFF8CD2E2\)/primary = Color(0xFF8DD6E5)/' "$THEME"
+          perl -pi -e 's/background = Color\(0xFFF6FBFE\)/background = Color(0xFFF1FAFC)/' "$THEME"
+          perl -pi -e 's/background = Color\(0xFF0E1315\)/background = Color(0xFF07151F)/' "$THEME"
+          perl -pi -e 's/surface = Color\(0xFFF6FBFE\)/surface = Color(0xFFF5FBFC)/' "$THEME"
+          perl -pi -e 's/surface = Color\(0xFF0E1315\)/surface = Color(0xFF091A24)/' "$THEME"
+
+          git diff -- "$THEME"
+
+      - name: Commit theme migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$THEME" 2>/dev/null || git add app/src/main/java/com/tangobear/qiyu/reminder/ui/theme/Theme.kt
+          git add -A
+          git commit -m 'style: make Qiyu-inspired sea theme the default' || exit 0
+          git push
