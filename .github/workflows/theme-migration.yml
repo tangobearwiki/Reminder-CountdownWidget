@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  THEME: app/src/main/java/com/tangobear/qiyu/reminder/ui/theme/Theme.kt
+
 jobs:
   theme:
     if: ${{ github.actor != 'github-actions[bot]' }}
@@ -22,7 +25,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          THEME='app/src/main/java/com/tangobear/qiyu/reminder/ui/theme/Theme.kt'
           if [ ! -f "$THEME" ]; then
             echo "Waiting for package migration to create $THEME"
             exit 0
@@ -46,7 +48,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add "$THEME" 2>/dev/null || git add app/src/main/java/com/tangobear/qiyu/reminder/ui/theme/Theme.kt
+          git add "$THEME"
           git add -A
           git commit -m 'style: make Qiyu-inspired sea theme the default' || exit 0
           git push
