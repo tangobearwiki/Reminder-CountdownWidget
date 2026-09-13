@@ -22,11 +22,13 @@ jobs:
           fetch-depth: 0
 
       - name: Apply Qiyu defaults
+        id: theme_update
         shell: bash
         run: |
           set -euo pipefail
           if [ ! -f "$THEME" ]; then
             echo "Waiting for package migration to create $THEME"
+            echo "updated=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -41,14 +43,15 @@ jobs:
           perl -pi -e 's/surface = Color\(0xFF0E1315\)/surface = Color(0xFF091A24)/' "$THEME"
 
           git diff -- "$THEME"
+          echo "updated=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit theme migration
+        if: steps.theme_update.outputs.updated == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$THEME"
-          git add -A
-          git commit -m 'style: make Qiyu-inspired sea theme the default' || exit 0
+          git commit -m 'style: make Qiyu-inspired sea theme the default'
           git push
