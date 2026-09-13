@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Reminder" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Reminder" parent="android:Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/qiyu_night</item>
+        <item name="android:windowBackground">@color/qiyu_night</item>
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#FFFFFF</item>
+        <item name="windowSplashScreenBackground">@color/qiyu_night</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_app_logo</item>
         <item name="postSplashScreenTheme">@style/Theme.Reminder</item>
     </style>
