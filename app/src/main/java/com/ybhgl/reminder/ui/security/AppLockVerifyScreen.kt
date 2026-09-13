@@ -129,16 +129,18 @@ fun AppLockVerifyScreen(
                 },
                 onPathComplete = { path ->
                     val pathStr = path.joinToString(",")
-                    if (pathStr == existingPassword) {
-                        lockState = GestureLockState.SUCCESS
-                        message = "已解锁"
-                        coroutineScope.launch {
-                            delay(300)
-                            onUnlockSuccess()
+                    coroutineScope.launch {
+                        if (SecurityPreferences.verifyGesturePassword(context, pathStr)) {
+                            lockState = GestureLockState.SUCCESS
+                            message = "已解锁"
+                            coroutineScope.launch {
+                                delay(300)
+                                onUnlockSuccess()
+                            }
+                        } else {
+                            lockState = GestureLockState.ERROR
+                            message = "密码错误，请重试"
                         }
-                    } else {
-                        lockState = GestureLockState.ERROR
-                        message = "密码错误，请重试"
                     }
                 }
             )
