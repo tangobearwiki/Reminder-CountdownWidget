@@ -9,6 +9,13 @@
     <color name="qiyu_silver">#B7C9CE</color>
     <color name="qiyu_glow">#78C9DD</color>
 
+    <!-- Cycle-care accents: warm enough to feel gentle, restrained enough to stay in the sea palette. -->
+    <color name="qiyu_care_light">#E6F2F4</color>
+    <color name="qiyu_care_dark">#17343D</color>
+    <color name="qiyu_care_accent">#7FB6C2</color>
+    <color name="qiyu_care_text_light">#28515B</color>
+    <color name="qiyu_care_text_dark">#C8E1E5</color>
+
     <!-- Light Mode Widget Colors -->
     <color name="widget_bg">#F4FBFD</color>
     <color name="widget_list_item_bg">#E7F3F6</color>
