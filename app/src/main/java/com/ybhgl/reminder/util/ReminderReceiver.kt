@@ -67,16 +67,20 @@ class ReminderReceiver : BroadcastReceiver() {
 
                 showNotification(context, intent, item)
 
-                // 触发后为下一次重复/下一周期重新调度
+                // 触发后为下一次重复/下一周期/连续提醒重新调度
                 if (item != null) {
                     when {
+                        item.notificationConfig.isContinuous -> {
+                            Log.d(TAG, "连续提醒 ${item.id}，滚动调度后续日期")
+                            ReminderScheduler.scheduleReminder(app, item)
+                        }
                         item.repeatInfo != null -> {
                             Log.d(TAG, "重复事件 ${item.id}，重调度下一次")
                             ReminderScheduler.scheduleReminder(app, item, forceNext = true)
                         }
                         item.type == ReminderType.PERIOD -> {
                             Log.d(TAG, "生理期事件 ${item.id}，为下一周期重调度")
-                            ReminderScheduler.scheduleReminder(app, item)
+                            ReminderScheduler.scheduleReminder(app, item, forceNext = true)
                         }
                     }
                 }

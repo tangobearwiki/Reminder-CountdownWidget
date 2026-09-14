@@ -91,6 +91,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -308,11 +309,11 @@ class MainActivity : FragmentActivity() {
             val cardColoringFlowInstance = remember(context) { cardColoringFlow(context) }
             val cardColoringEnabled by cardColoringFlowInstance.collectAsState(initial = true)
             val dynamicColorFlowInstance = remember(context) { dynamicColorFlow(context) }
-            val dynamicColorEnabled by dynamicColorFlowInstance.collectAsState(initial = true)
+            val dynamicColorEnabled by dynamicColorFlowInstance.collectAsState(initial = false)
             val colorPaletteFlowInstance = remember(context) { colorPaletteFlow(context) }
-            val themeColorPalette by colorPaletteFlowInstance.collectAsState(initial = AppColorPalette.PURPLE)
+            val themeColorPalette by colorPaletteFlowInstance.collectAsState(initial = AppColorPalette.CYAN)
             val customColorFlowInstance = remember(context) { com.ybhgl.reminder.data.customColorFlow(context) }
-            val customColorSeedInt by customColorFlowInstance.collectAsState(initial = 0xFF6650A4.toInt())
+            val customColorSeedInt by customColorFlowInstance.collectAsState(initial = 0xFF5FAFC4.toInt())
             val homeBackgroundColorInt by remember(context) { homeBackgroundColorFlow(context) }
                 .collectAsState(initial = null)
 
@@ -327,14 +328,21 @@ class MainActivity : FragmentActivity() {
             LaunchedEffect(reminderListState.itemList) {
                 if (reminderListState.itemList.any { it.notificationConfig.isEnabled }) {
                     val missingPermissions = mutableListOf<String>()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    val wantsAppNotification = reminderListState.itemList.any {
+                        it.notificationConfig.isEnabled && it.notificationConfig.useAppNotification
+                    }
+                    val wantsCalendar = reminderListState.itemList.any {
+                        it.notificationConfig.isEnabled && it.notificationConfig.useSystemCalendar
+                    }
+                    if (wantsAppNotification && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                     ) {
                         missingPermissions.add("通知权限")
                     }
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED ||
+                    if (wantsCalendar && (
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED ||
                         ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED
-                    ) {
+                    )) {
                         missingPermissions.add("日历权限")
                     }
 
@@ -1043,15 +1051,11 @@ private fun buildHeaderTitle(title: String, suffix: String): String {
 }
 
 private fun getDefaultRawColor(type: ReminderType, isDark: Boolean): Color {
-    return when {
-        !isDark && type == ReminderType.ANNUAL -> Color(0xFF1E88E5)
-        !isDark && type == ReminderType.COUNT_UP -> Color(0xFFF28C20)
-        !isDark && type == ReminderType.BIRTHDAY -> Color(0xFFE53935)
-        !isDark && type == ReminderType.PERIOD -> Color(0xFFEC407A)
-        isDark && type == ReminderType.PERIOD -> Color(0xFFF48FB1)
-        isDark && type == ReminderType.ANNUAL -> Color(0xFF64B5F6)
-        isDark && type == ReminderType.BIRTHDAY -> Color(0xFFEF5350)
-        else -> Color(0xFFF7A03A) // isDark && COUNT_UP
+    return when (type) {
+        ReminderType.ANNUAL -> if (isDark) com.ybhgl.reminder.ui.theme.ReminderTypeColors.countdownDark else com.ybhgl.reminder.ui.theme.ReminderTypeColors.countdownLight
+        ReminderType.COUNT_UP -> if (isDark) com.ybhgl.reminder.ui.theme.ReminderTypeColors.countUpDark else com.ybhgl.reminder.ui.theme.ReminderTypeColors.countUpLight
+        ReminderType.BIRTHDAY -> if (isDark) com.ybhgl.reminder.ui.theme.ReminderTypeColors.birthdayDark else com.ybhgl.reminder.ui.theme.ReminderTypeColors.birthdayLight
+        ReminderType.PERIOD -> if (isDark) com.ybhgl.reminder.ui.theme.ReminderTypeColors.periodDark else com.ybhgl.reminder.ui.theme.ReminderTypeColors.periodLight
     }
 }
 
@@ -1525,6 +1529,7 @@ fun ReminderListScreen(
                     val topBarHeightDp = with(LocalDensity.current) { topBarHeightPx.toDp() }
                     val dynamicTopPadding = (topBarHeightDp + with(LocalDensity.current) { titleOffsetPx.toDp() }).coerceAtLeast(0.dp)
                     EmptyStateCard(
+                        tab = tabs[page],
                         modifier = Modifier
                             .padding(horizontal = 24.dp, vertical = 32.dp)
                             .padding(top = dynamicTopPadding, bottom = listBottomPadding + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
@@ -2211,9 +2216,12 @@ private fun ReminderListItem(
             ),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = if (isSelectionMode) 0.dp else 1.dp,
-        shadowElevation = 1.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+        tonalElevation = if (isSelectionMode) 0.dp else 2.dp,
+        shadowElevation = if (isSelected) 6.dp else 2.dp,
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+        )
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -2440,7 +2448,7 @@ private fun ReminderSummaryCard(
             containerColor = Color.Transparent,
             contentColor = visuals.numberColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 6.dp else 3.dp),
         onClick = {}
     ) {
         Surface(
@@ -2468,7 +2476,10 @@ private fun ReminderSummaryCard(
             color = visuals.cardBackground,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
-            border = null
+            border = BorderStroke(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else visuals.headerColor.copy(alpha = 0.18f)
+            )
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Box(
@@ -2668,13 +2679,21 @@ private fun String.toComposeColor(): Color {
 
 
 @Composable
-private fun EmptyStateCard(modifier: Modifier = Modifier) {
+private fun EmptyStateCard(tab: ReminderTab, modifier: Modifier = Modifier) {
+    val (title, subtitle, icon) = when (tab) {
+        ReminderTab.COUNTDOWN -> Triple("还没有倒数日", "记录纪念日、考试或旅行，让重要日子不再错过", Icons.Filled.DateRange)
+        ReminderTab.COUNTUP -> Triple("还没有正数日", "从今天开始，把值得纪念的日子累积起来", Icons.Filled.PushPin)
+        ReminderTab.BIRTHDAY -> Triple("还没有生日提醒", "添加亲友生日，农历公历都能准时提醒", Icons.Filled.DateRange)
+        ReminderTab.PERIOD -> Triple("还没有生理期记录", "记录上次开始日期，即可智能预测下一周期", Icons.Filled.Favorite)
+    }
     Card(
         modifier = modifier,
         shape = ReminderCardShape,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
         Column(
             modifier = Modifier
@@ -2683,32 +2702,37 @@ private fun EmptyStateCard(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 装饰性图标：用 primaryContainer 圆形底色衬托，增加视觉焦点
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(72.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Filled.DateRange,
+                    imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(34.dp),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "目前还没有提醒",
+                text = title,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold
                 )
             )
             Text(
-                text = "点击右下角的加号添加第一个纪念日吧！",
+                text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "轻点底部加号，添加第一条",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.ybhgl.reminder.util
 
 import com.tyme.solar.SolarDay
+import java.time.DateTimeException
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -39,31 +40,25 @@ object BirthdayCalculator {
         "摩羯座" to (12 to 22)
     )
 
-    fun calculate(birthDate: LocalDate, isLunar: Boolean = false): BirthdayInfo {
-        val today = LocalDate.now()
-        // 从出生日期到现在，该日期总共出现了多少次（含出生当天）
+    /**
+     * 周岁：生日当天起算新的一岁，生日前仍是上一岁。
+     * 旧实现在生日次日就把年份差 +1，导致平时年龄偏大一岁。
+     */
+    fun calculate(birthDate: LocalDate, isLunar: Boolean = false, today: LocalDate = LocalDate.now()): BirthdayInfo {
         val age = if (isLunar) {
-            // 农历：计算农历年份差
             val birthSolar = SolarDay.fromYmd(birthDate.year, birthDate.monthValue, birthDate.dayOfMonth)
             val birthLunar = birthSolar.getLunarDay()
             val todaySolar = SolarDay.fromYmd(today.year, today.monthValue, today.dayOfMonth)
             val todayLunar = todaySolar.getLunarDay()
             val lunarYearDiff = todayLunar.getYear() - birthLunar.getYear()
-            // 计算今年该农历生日对应的公历日期
             val birthdayThisYear = getLunarBirthdayInYear(birthDate, lunarYearDiff)
-            // 检查今年农历生日是否已过（不包含今天）
-            val hasPassedThisYear = today.isAfter(birthdayThisYear)
-            lunarYearDiff + if (hasPassedThisYear) 1 else 0
+            val completedYears = if (today.isBefore(birthdayThisYear)) lunarYearDiff - 1 else lunarYearDiff
+            completedYears.coerceAtLeast(0)
         } else {
-            // 公历：计算公历年份差
-            val birthThisYear = try {
-                birthDate.withYear(today.year)
-            } catch (e: Exception) {
-                // 处理 2月29日
-                birthDate.plusYears((today.year - birthDate.year).toLong())
-            }
+            val birthThisYear = solarBirthdayInYear(birthDate, today.year)
             val baseAge = today.year - birthDate.year
-            if (today.isAfter(birthThisYear)) baseAge + 1 else baseAge
+            val completedYears = if (today.isBefore(birthThisYear)) baseAge - 1 else baseAge
+            completedYears.coerceAtLeast(0)
         }
 
         val zodiac = getZodiacSign(birthDate.monthValue, birthDate.dayOfMonth)
@@ -74,6 +69,15 @@ object BirthdayCalculator {
             chineseZodiac = chineseZodiac,
             zodiac = zodiac
         )
+    }
+
+    /** 公历生日落到指定年份；闰年 2/29 在平年记为 2/28。 */
+    fun solarBirthdayInYear(birthDate: LocalDate, year: Int): LocalDate {
+        return try {
+            birthDate.withYear(year)
+        } catch (_: DateTimeException) {
+            LocalDate.of(year, 2, 28)
+        }
     }
 
     private fun getZodiacSign(month: Int, day: Int): String {
@@ -89,12 +93,12 @@ object BirthdayCalculator {
         val solar = SolarDay.fromYmd(birthDate.year, birthDate.monthValue, birthDate.dayOfMonth)
         val lunar = solar.getLunarDay()
         val lunarYear = lunar.getYear()
-        val index = (lunarYear - 4) % 12
+        val index = Math.floorMod(lunarYear - 4, 12)
         return CHINESE_ZODIAC[index]
     }
 
     /**
-     * Generates birthday list items from age 0 to 120.
+     * Generates birthday list items from age 0 to 150.
      * For lunar birthdays, the actual birthday date is recalculated for each year.
      */
     fun generateBirthdayList(birthDate: LocalDate, isLunar: Boolean): List<BirthdayListItem> {
@@ -105,7 +109,7 @@ object BirthdayCalculator {
             val targetDate = if (isLunar) {
                 getLunarBirthdayInYear(birthDate, age)
             } else {
-                birthDate.plusYears(age.toLong())
+                solarBirthdayInYear(birthDate, birthDate.year + age)
             }
 
             val dayCount = ChronoUnit.DAYS.between(today, targetDate).toInt()
@@ -169,7 +173,7 @@ object BirthdayCalculator {
         }
 
         if (result == null) {
-            return birthDate.plusYears(yearsToAdd.toLong())
+            return solarBirthdayInYear(birthDate, birthDate.year + yearsToAdd)
         }
 
         val nextSolar = result.getSolarDay()

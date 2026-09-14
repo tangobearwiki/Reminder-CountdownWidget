@@ -145,7 +145,7 @@ fun dynamicColorFlow(context: Context): Flow<Boolean> =
             }
         }
         .map { preferences ->
-            preferences[DYNAMIC_COLOR_KEY] ?: true
+            preferences[DYNAMIC_COLOR_KEY] ?: false
         }
 
 suspend fun saveDynamicColor(context: Context, enabled: Boolean) {
@@ -166,7 +166,7 @@ fun colorPaletteFlow(context: Context): Flow<AppColorPalette> =
         .map { preferences ->
             val stored = preferences[COLOR_PALETTE_KEY]
             stored?.let { runCatching { AppColorPalette.valueOf(it) }.getOrNull() }
-                ?: AppColorPalette.PURPLE
+                ?: AppColorPalette.CYAN
         }
 
 suspend fun saveColorPalette(context: Context, palette: AppColorPalette) {
@@ -185,7 +185,7 @@ fun customColorFlow(context: Context): Flow<Int> =
             }
         }
         .map { preferences ->
-            preferences[CUSTOM_COLOR_SEED_KEY] ?: 0xFF6650A4.toInt()
+            preferences[CUSTOM_COLOR_SEED_KEY] ?: 0xFF5FAFC4.toInt()
         }
 
 suspend fun saveCustomColor(context: Context, color: Int) {

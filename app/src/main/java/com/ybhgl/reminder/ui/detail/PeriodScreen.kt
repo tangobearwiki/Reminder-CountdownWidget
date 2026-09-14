@@ -298,9 +298,9 @@ fun PeriodTabContent(
     var showDatePicker by remember { mutableStateOf(false) }
 
     // 弹窗里的状态
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var periodLen by remember { mutableIntStateOf(5) }
-    var cycleLen by remember { mutableIntStateOf(28) }
+    var selectedDate by remember(reminder?.id) { mutableStateOf(LocalDate.now()) }
+    var periodLen by remember(reminder?.id) { mutableIntStateOf(reminder?.periodLength ?: 5) }
+    var cycleLen by remember(reminder?.id) { mutableIntStateOf(reminder?.cycleLength ?: 28) }
 
     if (showDatePicker) {
         AlertDialog(
@@ -329,7 +329,10 @@ fun PeriodTabContent(
                         TextButton(onClick = { selectedDate = LocalDate.now() }) {
                             Text("今天")
                         }
-                        OutlinedButton(onClick = { selectedDate = selectedDate.plusDays(1) }) {
+                        OutlinedButton(onClick = {
+                            val tomorrow = selectedDate.plusDays(1)
+                            if (!tomorrow.isAfter(LocalDate.now())) selectedDate = tomorrow
+                        }) {
                             Text("后一天")
                         }
                     }
@@ -372,7 +375,8 @@ fun PeriodTabContent(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    onRecordPeriodStart(selectedDate, periodLen, cycleLen)
+                    val date = if (selectedDate.isAfter(LocalDate.now())) LocalDate.now() else selectedDate
+                    onRecordPeriodStart(date, periodLen, cycleLen)
                     showDatePicker = false
                 }) {
                     Text("保存")
@@ -391,14 +395,14 @@ fun PeriodTabContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
-            .padding(top = dynamicTopPadding + 8.dp, bottom = 16.dp),
+            .padding(top = dynamicTopPadding + 8.dp, bottom = 112.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 暖心提醒卡片
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFFFE4EC)
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f)
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -406,25 +410,36 @@ fun PeriodTabContent(
                     text = "周期小贴士",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD81B60)
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = warmMessage(reminder, prediction),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFAD1457)
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                 )
             }
         }
 
         if (reminder == null) {
             EmptyPeriodCard { showDatePicker = true }
-        } else if (prediction != null) {
-            PeriodOverviewCard(reminder, statusText, dateFmt, prediction)
-            // 录入本次开始（弹窗更新）
+        } else {
+            if (prediction != null) {
+                PeriodOverviewCard(reminder, statusText, dateFmt, prediction)
+            } else {
+                EmptyPeriodCard {
+                    selectedDate = reminder.lastPeriodStart ?: LocalDate.now()
+                    periodLen = reminder.periodLength
+                    cycleLen = reminder.cycleLength
+                    showDatePicker = true
+                }
+            }
             Button(
                 onClick = {
-                    selectedDate = prediction.nextStart
+                    selectedDate = prediction?.nextStart?.let { if (it.isAfter(LocalDate.now())) LocalDate.now() else it }
+                        ?: (reminder.lastPeriodStart ?: LocalDate.now())
+                    periodLen = reminder.periodLength
+                    cycleLen = reminder.cycleLength
                     showDatePicker = true
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -451,7 +466,7 @@ private fun EmptyPeriodCard(onAdd: () -> Unit) {
             Icon(
                 Icons.Filled.Favorite,
                 contentDescription = null,
-                tint = Color(0xFFEC407A),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(48.dp)
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -519,10 +534,10 @@ private fun PeriodOverviewCard(
 private fun PeriodNotificationCard(reminder: ReminderItem?) {
     val context = LocalContext.current
     val notifConfig = reminder?.notificationConfig ?: ReminderNotificationConfig()
-    var enabled by remember { mutableStateOf(notifConfig.isEnabled) }
-    var daysBefore by remember { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.daysBefore ?: 1) }
-    var hour by remember { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.time?.hour ?: 9) }
-    var minute by remember { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.time?.minute ?: 0) }
+    var enabled by remember(reminder?.id, notifConfig.isEnabled) { mutableStateOf(notifConfig.isEnabled) }
+    var daysBefore by remember(reminder?.id) { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.daysBefore ?: 1) }
+    var hour by remember(reminder?.id) { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.time?.hour ?: 9) }
+    var minute by remember(reminder?.id) { mutableIntStateOf(notifConfig.notificationTimes.firstOrNull()?.time?.minute ?: 0) }
     val repository = (context.applicationContext as ReminderApplication).container.reminderRepository
     val scope = rememberCoroutineScope()
 
@@ -553,13 +568,21 @@ private fun PeriodNotificationCard(reminder: ReminderItem?) {
                     checked = enabled,
                     onCheckedChange = { checked ->
                         enabled = checked
-                        val updatedConfig = notifConfig.copy(isEnabled = checked)
                         if (reminder != null) {
+                            val time = java.time.LocalTime.of(hour, minute)
+                            val updatedConfig = notifConfig.copy(
+                                isEnabled = checked,
+                                useAppNotification = true,
+                                notificationTimes = listOf(
+                                    com.ybhgl.reminder.data.NotificationTime(
+                                        daysBefore = daysBefore,
+                                        time = time
+                                    )
+                                )
+                            )
                             scope.launch {
                                 val updated = reminder.copy(notificationConfig = updatedConfig)
                                 repository.updateReminder(updated)
-                                // scheduleReminder 内部会在 isEnabled=false 时自动取消已设置的闹钟，
-                                // 否则关闭开关后已调度的闹钟仍会触发
                                 ReminderScheduler.scheduleReminder(context, updated)
                             }
                         }

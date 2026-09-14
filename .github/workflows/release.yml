@@ -14,18 +14,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Prepare release signing
+      - name: Check release signing secrets
+        id: signing
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
@@ -33,11 +25,33 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          : "${RELEASE_KEYSTORE_BASE64:?Missing RELEASE_KEYSTORE_BASE64 secret}"
-          : "${RELEASE_STORE_PASSWORD:?Missing RELEASE_STORE_PASSWORD secret}"
-          : "${RELEASE_KEY_ALIAS:?Missing RELEASE_KEY_ALIAS secret}"
-          : "${RELEASE_KEY_PASSWORD:?Missing RELEASE_KEY_PASSWORD secret}"
+          if [ -n "${RELEASE_KEYSTORE_BASE64:-}" ] && [ -n "${RELEASE_STORE_PASSWORD:-}" ] && [ -n "${RELEASE_KEY_ALIAS:-}" ] && [ -n "${RELEASE_KEY_PASSWORD:-}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured. Skipping signed APK (debug workflow still runs)."
+          fi
 
+      - name: Set up JDK 21
+        if: steps.signing.outputs.available == 'true'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        if: steps.signing.outputs.available == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare release signing
+        if: steps.signing.outputs.available == 'true'
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
           printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > app/release.keystore
           {
             printf 'storeFile=%s\n' "$GITHUB_WORKSPACE/app/release.keystore"
@@ -47,13 +61,15 @@ jobs:
           } > local.properties
 
       - name: Build Release APK
+        if: steps.signing.outputs.available == 'true'
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleReleaseNoMinify
 
       - name: Upload APK
+        if: steps.signing.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: deepspace-hourglass-release
+          name: reminder-release-apk
           path: app/build/outputs/apk/releaseNoMinify/*.apk
           retention-days: 30

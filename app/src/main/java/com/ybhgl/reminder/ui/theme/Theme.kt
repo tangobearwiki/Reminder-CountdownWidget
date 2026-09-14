@@ -295,7 +295,7 @@ private val PinkDarkColorScheme = darkColorScheme(
 )
 
 private val CyanLightColorScheme = lightColorScheme(
-    primary = Color(0xFF136776),
+    primary = Color(0xFF2B8197),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFC5DDE1),
     onPrimaryContainer = Color(0xFF001F25),
@@ -307,18 +307,18 @@ private val CyanLightColorScheme = lightColorScheme(
     onTertiary = Color(0xFFFFFFFF),
     tertiaryContainer = Color(0xFFD3E4FF),
     onTertiaryContainer = Color(0xFF041C35),
-    background = Color(0xFFF6FBFE),
+    background = Color(0xFFF1FAFC),
     onBackground = Color(0xFF181C1D),
-    surface = Color(0xFFF6FBFE),
+    surface = Color(0xFFF5FBFC),
     onSurface = Color(0xFF181C1D),
     surfaceVariant = Color(0xFFDAE4E4),
     onSurfaceVariant = Color(0xFF3F4949),
-    surfaceContainerLow = Color(0xFFC5DDE1),
-    surfaceContainerHigh = Color(0xFFB5CDD1)
+    surfaceContainerLow = Color(0xFFE7F3F6),
+    surfaceContainerHigh = Color(0xFFD4E6EA)
 )
 
 private val CyanDarkColorScheme = darkColorScheme(
-    primary = Color(0xFF8CD2E2),
+    primary = Color(0xFF8DD6E5),
     onPrimary = Color(0xFF003640),
     primaryContainer = Color(0xFF004E5A),
     onPrimaryContainer = Color(0xFFC5DDE1),
@@ -330,14 +330,14 @@ private val CyanDarkColorScheme = darkColorScheme(
     onTertiary = Color(0xFF1C314B),
     tertiaryContainer = Color(0xFF334863),
     onTertiaryContainer = Color(0xFFB3C8E8),
-    background = Color(0xFF0E1315),
+    background = Color(0xFF07151F),
     onBackground = Color(0xFFDFE3E5),
-    surface = Color(0xFF0E1315),
+    surface = Color(0xFF091A24),
     onSurface = Color(0xFFDFE3E5),
     surfaceVariant = Color(0xFF3F4949),
     onSurfaceVariant = Color(0xFFBEC8C8),
-    surfaceContainerLow = Color(0xFF171D1F),
-    surfaceContainerHigh = Color(0xFF21282A)
+    surfaceContainerLow = Color(0xFF0E2430),
+    surfaceContainerHigh = Color(0xFF16303C)
 )
 
 private val MonochromeLightColorScheme = lightColorScheme(
@@ -395,9 +395,9 @@ fun ReminderTheme(
     usePureBlack: Boolean = false,
     cardColoringEnabled: Boolean = true,
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    colorPalette: AppColorPalette = AppColorPalette.PURPLE,
-    customColorSeed: Color = Color(0xFF6750A4),
+    dynamicColor: Boolean = false,
+    colorPalette: AppColorPalette = AppColorPalette.CYAN,
+    customColorSeed: Color = Color(0xFF5FAFC4),
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (themeOption) {
@@ -446,7 +446,11 @@ fun ReminderTheme(
             background = Color.Black,
             surface = Color(0xFF050505),
             surfaceVariant = Color(0xFF121212),
-            surfaceTint = Color.Black
+            surfaceTint = Color.Black,
+            surfaceContainerLow = Color(0xFF0A0A0A),
+            surfaceContainerHigh = Color(0xFF161616),
+            surfaceContainerLowest = Color.Black,
+            surfaceContainer = Color(0xFF101010)
         )
     } else {
         baseColorScheme

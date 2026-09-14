@@ -2,14 +2,26 @@ package com.ybhgl.reminder.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// 提醒卡片类型语义色 — 用于不同类型提醒的视觉区分
-// 倒数（COUNT_DOWN）：温暖橙红，传达紧迫感
-val CountdownAccent = Color(0xFFE85D3A)
-// 正数（COUNT_UP）：清新青绿，传达成长感
-val CountUpAccent = Color(0xFF2DBE9A)
-// 生日（BIRTHDAY）：柔和粉红，传达温馨感
-val BirthdayAccent = Color(0xFFE8719A)
-// 生理期（PERIOD）：淡紫，传达柔和关怀
-val PeriodAccent = Color(0xFF9C6ADE)
-// 周年纪念（ANNUAL）：金黄，传达庆典感
-val AnnualAccent = Color(0xFFD4A72C)
+/**
+ * 启遇海青语义色：与小组件 / 系统主题保持同一套色板，
+ * 卡片标头、空状态图标、类型筛选共用，避免各处硬编码漂移。
+ */
+object ReminderTypeColors {
+    val countdownLight = Color(0xFF2F93AA)
+    val countdownDark = Color(0xFF78C9DD)
+    val countUpLight = Color(0xFFD4885F)
+    val countUpDark = Color(0xFFF7A03A)
+    val birthdayLight = Color(0xFFC76883)
+    val birthdayDark = Color(0xFFE8719A)
+    val periodLight = Color(0xFF5B86B6)
+    val periodDark = Color(0xFF90CAF9)
+    val annualLight = Color(0xFFC9A227)
+    val annualDark = Color(0xFFE8C547)
+}
+
+// 兼容旧引用
+val CountdownAccent = ReminderTypeColors.countdownLight
+val CountUpAccent = ReminderTypeColors.countUpLight
+val BirthdayAccent = ReminderTypeColors.birthdayLight
+val PeriodAccent = ReminderTypeColors.periodLight
+val AnnualAccent = ReminderTypeColors.annualLight

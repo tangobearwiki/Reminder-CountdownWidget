@@ -5,7 +5,12 @@ import org.junit.Assert.*
 import java.time.LocalDate
 import com.tyme.lunar.LunarDay
 import com.tyme.solar.SolarDay
+import com.ybhgl.reminder.data.ReminderItem
+import com.ybhgl.reminder.data.ReminderType
+import com.ybhgl.reminder.data.RepeatInfo
+import com.ybhgl.reminder.data.RepeatUnit
 import com.ybhgl.reminder.util.BirthdayCalculator
+import com.ybhgl.reminder.util.CalendarUtil
 
 class ExampleUnitTest {
     @Test
@@ -34,5 +39,46 @@ class ExampleUnitTest {
         assertEquals(2025, bdayLunar2.getYear())
         assertEquals(2, bdayLunar2.getMonth())
         assertEquals(10, bdayLunar2.getDay())
+    }
+
+    @Test
+    fun solarAgeIsWesternZhouSui() {
+        val birth = LocalDate.of(2000, 6, 1)
+        assertEquals(26, BirthdayCalculator.calculate(birth, isLunar = false, today = LocalDate.of(2026, 6, 1)).age)
+        assertEquals(26, BirthdayCalculator.calculate(birth, isLunar = false, today = LocalDate.of(2026, 6, 2)).age)
+        assertEquals(25, BirthdayCalculator.calculate(birth, isLunar = false, today = LocalDate.of(2026, 5, 31)).age)
+        assertEquals(0, BirthdayCalculator.calculate(birth, isLunar = false, today = LocalDate.of(2000, 6, 1)).age)
+    }
+
+    @Test
+    fun birthdayWithoutRepeatStillRecursYearly() {
+        val item = ReminderItem(
+            id = 1,
+            title = "小明",
+            date = LocalDate.of(2000, 6, 1),
+            type = ReminderType.BIRTHDAY,
+            isLunar = false,
+            tag = "",
+            isPinned = false,
+            repeatInfo = null
+        )
+        val next = CalendarUtil.calculateNextTargetDate(item, LocalDate.of(2026, 6, 2))
+        assertEquals(LocalDate.of(2027, 6, 1), next)
+    }
+
+    @Test
+    fun dailyRepeatJumpsInsteadOfLooping() {
+        val item = ReminderItem(
+            id = 2,
+            title = "每日",
+            date = LocalDate.of(2010, 1, 1),
+            type = ReminderType.ANNUAL,
+            isLunar = false,
+            tag = "",
+            isPinned = false,
+            repeatInfo = RepeatInfo(1, RepeatUnit.DAY)
+        )
+        val next = CalendarUtil.calculateNextTargetDate(item, LocalDate.of(2026, 9, 14))
+        assertEquals(LocalDate.of(2026, 9, 14), next)
     }
 }

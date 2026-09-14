@@ -241,6 +241,7 @@ fun AutoResizeText(
 fun StatusBarScrim(modifier: Modifier = Modifier) {
     val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val scrimHeight = statusBarHeight + 16.dp
+    val top = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
     androidx.compose.foundation.layout.Box(
         modifier = modifier
             .fillMaxWidth()
@@ -248,7 +249,7 @@ fun StatusBarScrim(modifier: Modifier = Modifier) {
             .background(
                 androidx.compose.ui.graphics.Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.4f),
+                        top,
                         Color.Transparent
                     )
                 )

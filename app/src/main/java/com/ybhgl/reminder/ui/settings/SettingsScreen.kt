@@ -165,11 +165,11 @@ fun SettingsScreen(
     val cardColoringPreferenceFlow = remember(context) { viewModel.cardColoringPreferenceFlow(context) }
     val useCardColoring by cardColoringPreferenceFlow.collectAsState(initial = true)
     val dynamicColorPreferenceFlow = remember(context) { viewModel.dynamicColorPreferenceFlow(context) }
-    val dynamicColorEnabled by dynamicColorPreferenceFlow.collectAsState(initial = true)
+    val dynamicColorEnabled by dynamicColorPreferenceFlow.collectAsState(initial = false)
     val colorPalettePreferenceFlow = remember(context) { viewModel.colorPalettePreferenceFlow(context) }
-    val themeColorPalette by colorPalettePreferenceFlow.collectAsState(initial = AppColorPalette.PURPLE)
+    val themeColorPalette by colorPalettePreferenceFlow.collectAsState(initial = AppColorPalette.CYAN)
     val customColorPreferenceFlow = remember(context) { viewModel.customColorPreferenceFlow(context) }
-    val customColorSeedInt by customColorPreferenceFlow.collectAsState(initial = 0xFF6650A4.toInt())
+    val customColorSeedInt by customColorPreferenceFlow.collectAsState(initial = 0xFF5FAFC4.toInt())
     val homeBackgroundColorInt by remember(context) { viewModel.homeBackgroundColorPreferenceFlow(context) }
         .collectAsState(initial = null)
     val defaultPagePreferenceFlow = remember(context) { viewModel.defaultPageFlow(context) }

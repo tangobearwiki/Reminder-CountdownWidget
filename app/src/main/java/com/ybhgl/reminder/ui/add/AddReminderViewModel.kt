@@ -196,13 +196,17 @@ class AddReminderViewModel(
     }
 
     fun onTypeChange(type: ReminderType) {
-        reminderUiState = if (type == ReminderType.BIRTHDAY) {
-            reminderUiState.copy(
+        reminderUiState = when (type) {
+            ReminderType.BIRTHDAY -> reminderUiState.copy(
                 type = type,
                 repeatInfo = RepeatInfo(interval = 1, unit = RepeatUnit.YEAR)
             )
-        } else {
-            reminderUiState.copy(type = type)
+            ReminderType.PERIOD -> reminderUiState.copy(
+                type = type,
+                lastPeriodStart = reminderUiState.lastPeriodStart ?: reminderUiState.date,
+                tag = reminderUiState.tag.ifBlank { "健康" }
+            )
+            else -> reminderUiState.copy(type = type)
         }
     }
 }
@@ -224,7 +228,10 @@ data class ReminderUiState(
     val notes: String = "",
     val isCustomized: Boolean = false,
     val customHeaderColor: String = "",
-    val customFont: String = ""
+    val customFont: String = "",
+    val periodLength: Int = 5,
+    val cycleLength: Int = 28,
+    val lastPeriodStart: LocalDate? = null
 )
 
 fun ReminderUiState.toReminderItem(): ReminderItem = ReminderItem(
@@ -240,7 +247,10 @@ fun ReminderUiState.toReminderItem(): ReminderItem = ReminderItem(
     notes = notes,
     isCustomized = isCustomized,
     customHeaderColor = customHeaderColor,
-    customFont = customFont
+    customFont = customFont,
+    periodLength = periodLength,
+    cycleLength = cycleLength,
+    lastPeriodStart = if (type == ReminderType.PERIOD) (lastPeriodStart ?: date) else lastPeriodStart
 )
 
 fun ReminderItem.toReminderUiState(): ReminderUiState = ReminderUiState(
@@ -256,5 +266,8 @@ fun ReminderItem.toReminderUiState(): ReminderUiState = ReminderUiState(
     notes = notes,
     isCustomized = isCustomized,
     customHeaderColor = customHeaderColor,
-    customFont = customFont
+    customFont = customFont,
+    periodLength = periodLength,
+    cycleLength = cycleLength,
+    lastPeriodStart = lastPeriodStart
 )

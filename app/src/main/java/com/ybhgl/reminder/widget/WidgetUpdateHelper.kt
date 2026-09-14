@@ -42,7 +42,10 @@ object WidgetUpdateHelper {
         val today = LocalDate.now()
         val upcoming = items.filter { it.type != ReminderType.COUNT_UP }
             .mapNotNull { item ->
-                val nextDate = CalendarUtil.calculateNextTargetDate(item)
+                val nextDate = when (item.type) {
+                    ReminderType.PERIOD -> PeriodCalculator.predict(item)?.nextStart
+                    else -> CalendarUtil.calculateNextTargetDate(item)
+                }
                 if (nextDate != null) {
                     item to ChronoUnit.DAYS.between(today, nextDate)
                 } else {

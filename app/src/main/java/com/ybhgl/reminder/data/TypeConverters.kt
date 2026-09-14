@@ -5,9 +5,15 @@ import kotlinx.serialization.json.Json
 import java.time.LocalDate
 
 class TypeConverters {
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        isLenient = true
+    }
+
     @TypeConverter
     fun fromString(value: String?): LocalDate? {
-        return value?.let { LocalDate.parse(it) }
+        return value?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
     }
 
     @TypeConverter
@@ -16,31 +22,33 @@ class TypeConverters {
     }
 
     @TypeConverter
-    fun toReminderType(value: String) = enumValueOf<ReminderType>(value)
+    fun toReminderType(value: String) = runCatching { enumValueOf<ReminderType>(value) }
+        .getOrDefault(ReminderType.ANNUAL)
 
     @TypeConverter
     fun fromReminderType(value: ReminderType) = value.name
 
     @TypeConverter
     fun fromRepeatInfo(repeatInfo: RepeatInfo?): String? {
-        return repeatInfo?.let { Json.encodeToString(it) }
+        return repeatInfo?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
-    fun toRepeatInfo(json: String?): RepeatInfo? {
-        return json?.let { Json.decodeFromString<RepeatInfo>(it) }
+    fun toRepeatInfo(raw: String?): RepeatInfo? {
+        if (raw.isNullOrBlank()) return null
+        return runCatching { json.decodeFromString<RepeatInfo>(raw) }.getOrNull()
     }
 
     @TypeConverter
     fun fromReminderNotificationConfig(config: ReminderNotificationConfig): String {
-        return Json.encodeToString(config)
+        return json.encodeToString(config)
     }
 
     @TypeConverter
-    fun toReminderNotificationConfig(json: String): ReminderNotificationConfig {
+    fun toReminderNotificationConfig(raw: String): ReminderNotificationConfig {
         return try {
-            Json.decodeFromString<ReminderNotificationConfig>(json)
-        } catch (e: Exception) {
+            json.decodeFromString<ReminderNotificationConfig>(raw)
+        } catch (_: Exception) {
             ReminderNotificationConfig()
         }
     }

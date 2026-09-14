@@ -45,8 +45,7 @@ object BackupEncryptor {
             
             "$ivBase64:$encryptedBase64"
         } catch (e: Exception) {
-            e.printStackTrace()
-            plainText // 如果加密失败，保留明文
+            throw IllegalStateException("备份加密失败，已中止写入以免泄露明文", e)
         }
     }
 

@@ -54,9 +54,39 @@ abstract class ReminderDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * minSdk 28 的 SQLite 是 3.22，不支持 RENAME COLUMN（需要 3.25+）。
+         * 用建新表 + 拷贝的方式把 category 重命名为 tag，避免 Android 9/10 升级直接崩溃。
+         */
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE reminders RENAME COLUMN category TO tag")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `reminders_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `date` TEXT NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `isLunar` INTEGER NOT NULL,
+                        `tag` TEXT NOT NULL,
+                        `isPinned` INTEGER NOT NULL,
+                        `repeatInfo` TEXT,
+                        `notificationConfig` TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `reminders_new` (
+                        `id`, `title`, `date`, `type`, `isLunar`, `tag`, `isPinned`, `repeatInfo`, `notificationConfig`
+                    )
+                    SELECT
+                        `id`, `title`, `date`, `type`, `isLunar`, `category`, `isPinned`, `repeatInfo`, `notificationConfig`
+                    FROM `reminders`
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE `reminders`")
+                db.execSQL("ALTER TABLE `reminders_new` RENAME TO `reminders`")
             }
         }
 

@@ -2,6 +2,7 @@ package com.ybhgl.reminder.util
 
 import com.ybhgl.reminder.data.ReminderItem
 import com.ybhgl.reminder.data.ReminderType
+import com.ybhgl.reminder.data.RepeatInfo
 import com.ybhgl.reminder.data.RepeatUnit
 import com.tyme.solar.SolarDay
 import java.time.LocalDate
@@ -26,9 +27,11 @@ object CalendarUtil {
     /**
      * 计算下一个目标日期。
      * 防护：repeatInfo.interval <= 0（可能来自损坏的备份数据）时强制按 1 处理，避免死循环。
+     * 生日即使未设置 repeatInfo 也按每年循环，避免「生日已过」后永远不再提醒。
      */
     fun calculateNextTargetDate(reminderItem: ReminderItem, baseDate: LocalDate = LocalDate.now()): LocalDate? {
         val repeatInfo = reminderItem.repeatInfo
+            ?: if (reminderItem.type == ReminderType.BIRTHDAY) RepeatInfo(1, RepeatUnit.YEAR) else null
 
         if (repeatInfo == null) {
             return if (reminderItem.date.isBefore(baseDate)) null else reminderItem.date
@@ -38,8 +41,6 @@ object CalendarUtil {
         val interval = repeatInfo.interval.coerceAtLeast(1)
 
         if (reminderItem.type == ReminderType.BIRTHDAY && reminderItem.isLunar) {
-            // 农历生日：利用 BirthdayCalculator 的逻辑寻找下一个大于等于 baseDate 的生日
-            // 优化：通过出生农历年份和今天农历年份差确定 approximateAge，将搜索起点设为 max(0, approximateAge - 1)，避免从 0 岁开始重复计算
             val birthSolar = SolarDay.fromYmd(reminderItem.date.year, reminderItem.date.monthValue, reminderItem.date.dayOfMonth)
             val birthLunar = birthSolar.getLunarDay()
             val birthLunarYear = birthLunar.getYear()
@@ -63,47 +64,96 @@ object CalendarUtil {
         var currentDate = reminderItem.date
 
         if (!reminderItem.isLunar) {
-            // Gregorian calculation
-            while (currentDate.isBefore(baseDate)) {
-                currentDate = when (repeatInfo.unit) {
-                    RepeatUnit.DAY -> currentDate.plusDays(interval.toLong())
-                    RepeatUnit.WEEK -> currentDate.plusWeeks(interval.toLong())
-                    RepeatUnit.MONTH -> currentDate.plusMonths(interval.toLong())
-                    RepeatUnit.YEAR -> currentDate.plusYears(interval.toLong())
-                }
-            }
+            currentDate = jumpSolarDate(currentDate, baseDate, interval, repeatInfo.unit)
             return currentDate.takeUnless { repeatInfo.endDate?.isBefore(it) == true }
         } else {
-            // Lunar calculation
-            while (currentDate.isBefore(baseDate)) {
+            var guard = 0
+            while (currentDate.isBefore(baseDate) && guard < 400) {
                 currentDate = when (repeatInfo.unit) {
                     RepeatUnit.YEAR -> getNextLunarYearDate(currentDate, interval)
                     RepeatUnit.MONTH -> getNextLunarMonthDate(currentDate, interval)
-                    // Lunar day/week repeats are not standard, treat them as gregorian.
                     RepeatUnit.DAY -> currentDate.plusDays(interval.toLong())
                     RepeatUnit.WEEK -> currentDate.plusWeeks(interval.toLong())
                 }
+                guard++
             }
             return currentDate.takeUnless { repeatInfo.endDate?.isBefore(it) == true }
         }
     }
 
+    /**
+     * 用日期差直接跳到目标附近，再最多走一步校正，避免「每天重复从 2010 年到今天」成千上万次循环。
+     */
+    private fun jumpSolarDate(
+        start: LocalDate,
+        baseDate: LocalDate,
+        interval: Int,
+        unit: RepeatUnit
+    ): LocalDate {
+        if (!start.isBefore(baseDate)) return start
+        var current = start
+        when (unit) {
+            RepeatUnit.DAY -> {
+                val elapsed = java.time.temporal.ChronoUnit.DAYS.between(start, baseDate)
+                val steps = (elapsed + interval - 1) / interval
+                current = start.plusDays(steps * interval.toLong())
+            }
+            RepeatUnit.WEEK -> {
+                val elapsed = java.time.temporal.ChronoUnit.WEEKS.between(start, baseDate)
+                val steps = (elapsed + interval - 1) / interval
+                current = start.plusWeeks(steps * interval.toLong())
+            }
+            RepeatUnit.MONTH -> {
+                val elapsed = java.time.temporal.ChronoUnit.MONTHS.between(start, baseDate)
+                val steps = elapsed / interval
+                current = start.plusMonths(steps * interval.toLong())
+            }
+            RepeatUnit.YEAR -> {
+                val elapsed = java.time.temporal.ChronoUnit.YEARS.between(start, baseDate)
+                val steps = elapsed / interval
+                current = start.plusYears(steps * interval.toLong())
+            }
+        }
+        var guard = 0
+        while (current.isBefore(baseDate) && guard < 64) {
+            current = when (unit) {
+                RepeatUnit.DAY -> current.plusDays(interval.toLong())
+                RepeatUnit.WEEK -> current.plusWeeks(interval.toLong())
+                RepeatUnit.MONTH -> current.plusMonths(interval.toLong())
+                RepeatUnit.YEAR -> current.plusYears(interval.toLong())
+            }
+            guard++
+        }
+        return current
+    }
+
     private fun getNextLunarYearDate(currentSolarDate: LocalDate, interval: Int): LocalDate {
         val currentLunar = SolarDay.fromYmd(currentSolarDate.year, currentSolarDate.monthValue, currentSolarDate.dayOfMonth).getLunarDay()
         val targetYear = currentLunar.getYear() + interval
+        val month = currentLunar.getMonth()
         var targetDay = currentLunar.getDay()
         var nextLunar: com.tyme.lunar.LunarDay? = null
-        while (nextLunar == null && targetDay > 0) {
-            try {
-                nextLunar = com.tyme.lunar.LunarDay.fromYmd(targetYear, currentLunar.getMonth(), targetDay)
-            } catch (e: IllegalArgumentException) {
-                targetDay--
+
+        fun tryMonth(m: Int) {
+            var day = targetDay
+            while (nextLunar == null && day > 0) {
+                try {
+                    nextLunar = com.tyme.lunar.LunarDay.fromYmd(targetYear, m, day)
+                } catch (_: IllegalArgumentException) {
+                    day--
+                }
             }
+        }
+
+        tryMonth(month)
+        // 闰月在目标年不存在时，回退到对应的非闰月（与生日「无闰过前」一致）
+        if (nextLunar == null && month < 0) {
+            tryMonth(kotlin.math.abs(month))
         }
         if (nextLunar == null) {
             return currentSolarDate.plusYears(interval.toLong())
         }
-        val nextSolar = nextLunar.getSolarDay()
+        val nextSolar = nextLunar!!.getSolarDay()
         return LocalDate.of(nextSolar.getYear(), nextSolar.getMonth(), nextSolar.getDay())
     }
 
