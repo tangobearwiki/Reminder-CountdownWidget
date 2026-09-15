@@ -12,26 +12,19 @@ plugins {
 
 android {
     namespace = "com.ybhgl.reminder"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk { version = release(36) }
 
     signingConfigs {
         create("release") {
             val localProperties = Properties()
             val localPropertiesFile = rootProject.file("local.properties")
-
             if (localPropertiesFile.exists()) {
                 localProperties.load(FileInputStream(localPropertiesFile))
-
                 val storeFilePath = localProperties.getProperty("storeFile")
                 val storePasswordValue = localProperties.getProperty("storePassword")
                 val keyAliasValue = localProperties.getProperty("keyAlias")
                 val keyPasswordValue = localProperties.getProperty("keyPassword")
-
-                if (storeFilePath != null && storePasswordValue != null &&
-                    keyAliasValue != null && keyPasswordValue != null
-                ) {
+                if (storeFilePath != null && storePasswordValue != null && keyAliasValue != null && keyPasswordValue != null) {
                     storeFile = file(storeFilePath)
                     storePassword = storePasswordValue
                     keyAlias = keyAliasValue
@@ -42,12 +35,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ybhgl.reminder"
+        applicationId = "com.dshourglass.app"
         minSdk = 28
         targetSdk = 36
-        versionCode = 282
-        versionName = "2.8.2"
-
+        versionCode = 300
+        versionName = "3.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -55,18 +47,16 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
         create("releaseNoMinify") {
-            initWith(getByName("release")) 
-            isMinifyEnabled = false      // 关闭混淆
-            isShrinkResources = false    // 关闭资源压缩
+            initWith(getByName("release"))
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
+
     splits {
         abi {
             isEnable = true
@@ -75,33 +65,31 @@ android {
             isUniversalApk = false
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
     applicationVariants.all {
         val variant = this
         variant.outputs.forEach { output ->
-            // 将输出强转为 ApkVariantOutputImpl 以便修改文件名
             val apkOutput = output as? com.android.build.gradle.internal.api.ApkVariantOutputImpl
             if (apkOutput != null) {
-                // 获取当前正在打包的 ABI（如 arm64-v8a），如果取不到则默认为 universal
                 val abi = apkOutput.filters.find { it.filterType == "ABI" }?.identifier ?: "universal"
-                apkOutput.outputFileName = "Reminder-v${variant.versionName}-$abi-${variant.buildType.name}.apk"
+                apkOutput.outputFileName = "DeepSpaceHourglass-v${variant.versionName}-$abi-${variant.buildType.name}.apk"
             }
         }
     }
 }
 
-// 统一 Kotlin 与 Java 的 JVM target，避免 "Inconsistent JVM Target Compatibility" 编译错误
 kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
-    }
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
 }
 
 dependencies {
